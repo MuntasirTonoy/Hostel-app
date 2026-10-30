@@ -18,7 +18,13 @@ import { Admin } from "@/models/Admin";
 import { Member } from "@/models/Member";
 import { MonthlyAccount } from "@/models/MonthlyAccount";
 import { createMonthlyAccount } from "@/services/accounting-service";
-import { registerUser, updateProfile, verifyAdminCredentials } from "@/services/admin-service";
+import {
+  EMAIL_IN_USE_MESSAGE,
+  isEmailAvailable,
+  registerUser,
+  updateProfile,
+  verifyAdminCredentials,
+} from "@/services/admin-service";
 import { createMember, listMembers } from "@/services/member-service";
 
 setupTestDatabase();
@@ -73,12 +79,17 @@ describe("profile", () => {
     expect(await verifyAdminCredentials("new@example.com", "password123")).not.toBeNull();
   });
 
-  it("refuses an email that belongs to another account", async () => {
+  it("checks whether the new email is in use before checking the password", async () => {
     const a = await register("a@example.com");
     await register("b@example.com");
+    expect(await isEmailAvailable(a.userId, "B@example.com")).toBe(false);
+    expect(await isEmailAvailable(a.userId, "a@example.com")).toBe(true); // own email
+    expect(await isEmailAvailable(a.userId, "free@example.com")).toBe(true);
+
+    // Even with a wrong password, the "in use" error comes first.
     await expect(
-      updateProfile(a.userId, { name: "A", email: "b@example.com", currentPassword: "password123" }),
-    ).rejects.toMatchObject({ code: "VALIDATION" });
+      updateProfile(a.userId, { name: "A", email: "b@example.com", currentPassword: "wrong" }),
+    ).rejects.toMatchObject({ code: "VALIDATION", message: EMAIL_IN_USE_MESSAGE });
   });
 });
 

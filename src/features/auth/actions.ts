@@ -8,6 +8,7 @@ import { requireAdmin } from "@/lib/authz";
 import { loginSchema } from "@/schemas/auth";
 import {
   changeAdminPassword,
+  isEmailAvailable,
   registerUser,
   updateProfile,
   type ProfileDTO,
@@ -83,5 +84,15 @@ export async function updateProfileAction(values: unknown): Promise<ActionResult
     const profile = await updateProfile(userId, values);
     revalidatePath("/admin", "layout");
     return profile;
+  });
+}
+
+/** Live check used by the profile form before asking for the password. */
+export async function checkEmailAvailableAction(
+  email: string,
+): Promise<ActionResult<{ available: boolean }>> {
+  return runAction(async () => {
+    const { userId } = await requireAdmin();
+    return { available: await isEmailAvailable(userId, email) };
   });
 }

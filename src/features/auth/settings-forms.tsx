@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FieldError } from "@/features/accounting/new-month-form";
+import { FieldError } from "@/components/field-error";
 import { hostelSettingsSchema } from "@/schemas/auth";
 import { updateHostelAction } from "./actions";
 

@@ -21,6 +21,8 @@ and monthly record belongs to a hostel.
   - `/monthly-bill/<code>` shows that hostel's latest **published** month;
   - `/monthly-bill/<code>/YYYY-MM` shows an older month.
   - No login needed.
+  - The public report shows only the member table + meal rate; the "মাসিক খরচের সারসংক্ষেপ"
+    summary grid is hidden there (`showSummary={false}`) but still shown in admin views.
   - The report pages live in the `(report)` route group, with **no navbar or footer**.
     `/monthly-bill` itself is in `(site)`.
 - **Navigation:**
@@ -32,9 +34,12 @@ and monthly record belongs to a hostel.
   members, profile). **There is no settings page**: everything account- and hostel-related
   is on `/admin/profile`, and `/admin/settings` redirects there. Don't re-add a settings page.
   - `/admin/profile` shows the avatar initial, name, email and join date; hostel stats
-    (`getHostelStats`); the hostel public link; a name/email form (`updateProfile`; an
-    email change needs the current password and a unique email); the hostel-name form
+    (`getHostelStats`); the hostel public link; a name/email form; the hostel-name form
     (`SettingsForms`); and the change-password form (`#password`).
+  - **Changing the email** checks availability **first**: the form checks live (debounced,
+    via `checkEmailAvailableAction` → `isEmailAvailable`) and only then shows the
+    current-password field. `updateProfile` checks for an email in use before verifying
+    the password, and maps a duplicate-key race to the same message.
   - `/admin/password` redirects there. The sidebar's প্রোফাইল item, the user label, and
     the header link all point to it.
   - The dashboard is kept minimal: a title with the current month and status, the
@@ -107,7 +112,7 @@ src/app/(site)/          public pages, sharing SiteHeader + footer (landing, mon
 src/app/(report)/        bare layout: /monthly-bill/[hostel] and /monthly-bill/[hostel]/[period] (no navbar)
 src/app/admin/           protected pages; layout calls requireAdminPage(), sidebar nav
 src/app/api/auth/        Auth.js route handler
-src/features/accounting/ calculate.ts (pure calculator), actions.ts (server actions), editor/new-month UI
+src/features/accounting/ calculate.ts (pure calculator), actions.ts (server actions), AccountEditor (create + edit), AccountActions
 src/features/members/    member actions, MemberPicker, MembersManager
 src/features/auth/       login/register/logout/hostel-settings/password actions + forms
 src/services/            business logic + DB access (no auth inside; every function takes hostelId)
@@ -145,6 +150,16 @@ with a Bangla message) → Mongoose.
 - **Carry-forward:** a new month takes members from the hostel's most recent earlier
   record, with current registry names, skipping inactive members. Financial data is
   never copied.
+- **New month = one page.**
+  - `/admin/accounts/new` renders the full `AccountEditor` in `mode: "create"`, with
+    month/year pickers in section ক and members pre-filled from carry-forward.
+  - Changing the period reloads the members via `prepareNewMonthAction`. An existing
+    period shows a link instead.
+  - Save or publish calls `createAccountWithValuesAction` → `createAccountWithValues`,
+    which creates the record with all data in one write (DRAFT, or PUBLISHED if valid;
+    nothing is written on validation failure), then redirects to `/admin/accounts/<id>`.
+  - There is no separate "select members first" step; don't re-add it.
+  - `FieldError` lives in `src/components/field-error.tsx`.
 - **Draft/publish:**
   - saving keeps the record a DRAFT;
   - publishing needs a manager name, ≥1 member and total meals > 0;

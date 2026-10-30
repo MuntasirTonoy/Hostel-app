@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmAction } from "@/features/accounting/confirm-button";
-import { FieldError } from "@/features/accounting/new-month-form";
+import { FieldError } from "@/components/field-error";
 import { toBanglaDigits } from "@/lib/money";
 import { createMemberSchema, memberNameSchema, type CreateMemberInput } from "@/schemas/member";
 import type { MemberDTO } from "@/types/accounting";

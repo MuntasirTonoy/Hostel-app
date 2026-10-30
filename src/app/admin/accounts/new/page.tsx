@@ -1,30 +1,39 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/admin/page-header";
-import { NewMonthForm } from "@/features/accounting/new-month-form";
+import { AccountEditor } from "@/features/accounting/account-editor";
 import { requireAdminPage } from "@/lib/authz";
 import { currentPeriod } from "@/lib/months";
+import { getAccountByPeriod, getCarryForwardMembers } from "@/services/accounting-service";
 import { listMembers } from "@/services/member-service";
 
 export const metadata: Metadata = { title: "নতুন মাসের হিসাব" };
 
+/** The full entry form, pre-filled with the previous month's members. */
 export default async function NewAccountPage({ searchParams }: PageProps<"/admin/accounts/new">) {
   const { hostel } = await requireAdminPage();
   const params = await searchParams;
   const now = currentPeriod();
-  const month = Number(params.month);
-  const year = Number(params.year);
-  const registry = await listMembers(hostel.id);
+  const m = Number(params.month);
+  const y = Number(params.year);
+  const month = m >= 1 && m <= 12 ? m : now.month;
+  const year = y >= 2000 && y <= 2100 ? y : now.year;
+
+  const [registry, carryForward, existing] = await Promise.all([
+    listMembers(hostel.id),
+    getCarryForwardMembers(hostel.id, month, year),
+    getAccountByPeriod(hostel.id, month, year),
+  ]);
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-6xl">
       <PageHeader
         title="নতুন মাসের হিসাব"
-        description="পূর্ববর্তী মাসের সদস্যরা স্বয়ংক্রিয়ভাবে যুক্ত হবে; প্রয়োজনে সদস্য যোগ বা বাদ দিন।"
+        description="জমা, মিল ও খরচ লিখুন। সব হিসাব স্বয়ংক্রিয়ভাবে হালনাগাদ হবে। সংরক্ষণ করলে খসড়া থাকবে, প্রকাশ হবে না।"
       />
-      <NewMonthForm
+      <AccountEditor
+        mode={{ kind: "create", month, year, carryForward, existingId: existing?.id ?? null }}
         registry={registry}
-        defaultMonth={month >= 1 && month <= 12 ? month : now.month}
-        defaultYear={year >= 2000 && year <= 2100 ? year : now.year}
+        hostelName={hostel.name}
       />
     </div>
   );

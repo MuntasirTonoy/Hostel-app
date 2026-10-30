@@ -114,9 +114,21 @@ export async function getProfile(userId: string): Promise<ProfileDTO | null> {
     : null;
 }
 
+export const EMAIL_IN_USE_MESSAGE = "এই ইমেইল দিয়ে অন্য একটি অ্যাকাউন্ট আছে।";
+
+/** True when no *other* account uses this email. */
+export async function isEmailAvailable(userId: string, email: string): Promise<boolean> {
+  const parsed = updateProfileSchema.shape.email.safeParse(email);
+  if (!parsed.success) return false;
+  await connectDB();
+  const owner = await Admin.findOne({ email: parsed.data }, { _id: 1 }).lean<{ _id: Types.ObjectId }>();
+  return !owner || String(owner._id) === userId;
+}
+
 /**
  * Updates the user's name and email. Changing the email (which is the login)
- * requires the current password and must not collide with another account.
+ * first checks the new email is not used by another account, then requires the
+ * current password.
  */
 export async function updateProfile(userId: string, input: unknown): Promise<ProfileDTO> {
   const data = parseOrThrow(updateProfileSchema, input);
@@ -125,18 +137,28 @@ export async function updateProfile(userId: string, input: unknown): Promise<Pro
   if (!admin) throw new ServiceError("NOT_FOUND", "অ্যাকাউন্ট খুঁজে পাওয়া যায়নি।");
 
   if (data.email !== admin.email) {
+    // 1. Is the email already in use?
+    if (!(await isEmailAvailable(userId, data.email))) {
+      throw new ServiceError("VALIDATION", EMAIL_IN_USE_MESSAGE);
+    }
+    // 2. Only then verify the current password.
     const ok = data.currentPassword
       ? await bcrypt.compare(data.currentPassword, admin.passwordHash)
       : false;
     if (!ok) {
       throw new ServiceError("VALIDATION", "ইমেইল পরিবর্তন করতে বর্তমান পাসওয়ার্ড সঠিকভাবে লিখুন।");
     }
-    if (await Admin.exists({ email: data.email, _id: { $ne: admin._id } })) {
-      throw new ServiceError("VALIDATION", "এই ইমেইল দিয়ে অন্য একটি অ্যাকাউন্ট আছে।");
-    }
   }
 
-  await Admin.updateOne({ _id: admin._id }, { $set: { name: data.name, email: data.email } });
+  try {
+    await Admin.updateOne({ _id: admin._id }, { $set: { name: data.name, email: data.email } });
+  } catch (error) {
+    // The unique email index catches a race with another sign-up.
+    if ((error as { code?: number }).code === 11000) {
+      throw new ServiceError("VALIDATION", EMAIL_IN_USE_MESSAGE);
+    }
+    throw error;
+  }
   return (await getProfile(userId))!;
 }
 

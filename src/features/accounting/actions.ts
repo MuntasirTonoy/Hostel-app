@@ -5,6 +5,7 @@ import { runAction, type ActionResult } from "@/lib/action-result";
 import { requireAdmin } from "@/lib/authz";
 import { periodSchema, type NewMonthInput } from "@/schemas/accounting";
 import {
+  createAccountWithValues,
   createMonthlyAccount,
   deleteAccount,
   getAccountByPeriod,
@@ -51,6 +52,20 @@ export async function createMonthlyAccountAction(
   return runAction(async () => {
     const { hostel } = await requireAdmin();
     const account = await createMonthlyAccount(hostel.id, input);
+    revalidateAccounting();
+    return { id: account.id };
+  });
+}
+
+/** Creates a month straight from the full entry form (draft, or published when `publish`). */
+export async function createAccountWithValuesAction(
+  period: { month: number; year: number },
+  values: unknown,
+  publish: boolean,
+): Promise<ActionResult<{ id: string }>> {
+  return runAction(async () => {
+    const { hostel } = await requireAdmin();
+    const account = await createAccountWithValues(hostel.id, period, values, { publish });
     revalidateAccounting();
     return { id: account.id };
   });

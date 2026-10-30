@@ -39,7 +39,7 @@ export default async function AccountPage({ params }: PageProps<"/admin/accounts
       ) : (
         <AccountEditor
           key={account.updatedAt}
-          account={account}
+          mode={{ kind: "edit", account }}
           registry={registry}
           hostelName={hostel.name}
         />

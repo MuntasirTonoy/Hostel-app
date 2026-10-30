@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { calculateMonthlyAccount } from "@/features/accounting/calculate";
 import {
   accountToCalcInput,
+  createAccountWithValues,
   createMonthlyAccount,
   deleteAccount,
   deleteDraftAccount,
@@ -131,6 +132,64 @@ describe("creating months and carry-forward", () => {
     const [a] = await makeMembers("A");
     await expectServiceError(
       createMonthlyAccount(H, { month: 10, year: 2026, managerName: "", memberIds: [a.id, a.id] }),
+      "VALIDATION",
+    );
+  });
+});
+
+describe("creating a month from the full entry form", () => {
+  const values = (rows: { memberId: string; investment: string; mealCount: string }[], managerName = "রহিম") => ({
+    managerName,
+    members: rows.map((r) => ({ ...r, name: "" })),
+    expenses: { marketExpense: "2000", riceExpense: "490", fuelExpense: "150", otherExtraExpense: "50" },
+  });
+
+  it("saves a draft with all entered data in one step", async () => {
+    const [a, b] = await makeMembers("রহিম", "করিম");
+    const created = await createAccountWithValues(
+      H,
+      { month: 10, year: 2026 },
+      values([
+        { memberId: a.id, investment: "5000", mealCount: "45" },
+        { memberId: b.id, investment: "1000", mealCount: "38" },
+      ]),
+    );
+    expect(created.status).toBe("DRAFT");
+    expect(created.members.map((m) => m.name)).toEqual(["রহিম", "করিম"]);
+    expect(created.mealRate).toBe(3000);
+    expect(created.members.map((m) => m.refundAmount)).toEqual([355000, 0]);
+    expect(created.members.map((m) => m.outstandingBalance)).toEqual([0, 24000]);
+  });
+
+  it("publishes directly when valid, and writes nothing when not publishable", async () => {
+    const [a] = await makeMembers("A");
+    await expectServiceError(
+      createAccountWithValues(H, { month: 9, year: 2026 }, values([{ memberId: a.id, investment: "1", mealCount: "0" }]), {
+        publish: true,
+      }),
+      "NOT_PUBLISHABLE",
+    );
+    expect(await listAccounts(H)).toHaveLength(0);
+
+    const published = await createAccountWithValues(
+      H,
+      { month: 9, year: 2026 },
+      values([{ memberId: a.id, investment: "1", mealCount: "10" }]),
+      { publish: true },
+    );
+    expect(published.status).toBe("PUBLISHED");
+    expect((await getPublicReport(hostel.code)).report?.id).toBe(published.id);
+  });
+
+  it("refuses duplicates and members of other hostels", async () => {
+    const [a] = await makeMembers("A");
+    const other = await makeHostel("অন্য");
+    const foreign = await createMember(other.id, { name: "অন্যের" });
+    const row = [{ memberId: a.id, investment: "0", mealCount: "1" }];
+    await createAccountWithValues(H, { month: 10, year: 2026 }, values(row));
+    await expectServiceError(createAccountWithValues(H, { month: 10, year: 2026 }, values(row)), "DUPLICATE_PERIOD");
+    await expectServiceError(
+      createAccountWithValues(H, { month: 11, year: 2026 }, values([{ memberId: foreign.id, investment: "0", mealCount: "1" }])),
       "VALIDATION",
     );
   });

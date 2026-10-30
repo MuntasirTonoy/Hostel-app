@@ -97,7 +97,7 @@ export default async function DashboardPage() {
             highlight
           />
           <StatCard
-            label="চলতি মাসের মোট খরচ"
+            label="মোট খরচ"
             value={formatTaka(current.totalMemberCost)}
             icon={<CircleDollarSign className="size-4" />}
             highlight

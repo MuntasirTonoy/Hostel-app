@@ -36,7 +36,7 @@ export function PublicReportPage({
     <main className="mx-auto w-full max-w-6xl flex-1 space-y-8 px-4 py-6 sm:py-10">
       {report ? (
         <>
-          <ReportView id="monthly-bill" report={report} hostelName={hostel.name} generatedAt={new Date()} />
+          <ReportView id="monthly-bill" report={report} hostelName={hostel.name} generatedAt={new Date()} showSummary={false} />
           <ReportActions
             targetId="monthly-bill"
             fileName={`${hostel.code}-${periodSlug(report.month, report.year)}`}

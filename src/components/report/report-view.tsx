@@ -25,7 +25,7 @@ const COLUMNS = [
   "জমা (৳)",
   "মিল সংখ্যা",
   "অতিরিক্ত খরচ (৳)",
-  "চলতি মাসের মোট খরচ (৳)",
+  "মোট খরচ (৳)",
   "বকেয়া আছে (৳)",
   "ফেরত পাবে (৳)",
 ] as const;
@@ -35,11 +35,13 @@ export function ReportView({
   hostelName,
   generatedAt,
   id,
+  showSummary = true,
 }: {
   report: ReportData;
   hostelName?: string;
   generatedAt?: Date;
   id?: string;
+  showSummary?: boolean;
 }) {
   const totalOutstanding = report.members.reduce((s, m) => s + m.outstandingBalance, 0);
   const totalRefund = report.members.reduce((s, m) => s + m.refundAmount, 0);
@@ -169,19 +171,21 @@ export function ReportView({
         </table>
       </div>
 
-      <section aria-labelledby="summary-heading" className="space-y-3">
-        <h2 id="summary-heading" className="text-lg font-semibold">
-          মাসিক খরচের সারসংক্ষেপ
-        </h2>
-        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-3 lg:grid-cols-4">
-          {summary.map(([label, value]) => (
-            <div key={label} className="bg-background p-3">
-              <dt className="text-xs sm:text-sm text-muted-foreground">{label}</dt>
-              <dd className="mt-0.5 font-semibold tabular-nums">{value}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
+      {showSummary ? (
+        <section aria-labelledby="summary-heading" className="space-y-3">
+          <h2 id="summary-heading" className="text-lg font-semibold">
+            মাসিক খরচের সারসংক্ষেপ
+          </h2>
+          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-3 lg:grid-cols-4">
+            {summary.map(([label, value]) => (
+              <div key={label} className="bg-background p-3">
+                <dt className="text-xs sm:text-sm text-muted-foreground">{label}</dt>
+                <dd className="mt-0.5 font-semibold tabular-nums">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ) : null}
 
       {generatedAt ? (
         <p className="text-center text-xs text-muted-foreground">

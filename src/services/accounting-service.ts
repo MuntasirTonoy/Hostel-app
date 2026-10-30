@@ -372,6 +372,57 @@ async function prepareSnapshot(
   return { values: resolved, calc, expenses };
 }
 
+/** Reasons a record cannot be published yet (empty when publishable). */
+function publishProblems(values: AccountFormValues, calc: CalcResult): string[] {
+  return [
+    ...(values.managerName.trim() ? [] : [MESSAGES.MANAGER_REQUIRED]),
+    ...calc.issues.map((i) => i.message),
+  ];
+}
+
+/**
+ * Creates a new month directly from the full entry form (members with deposits
+ * and meals, expenses) — as a DRAFT, or PUBLISHED when `publish` is set and the
+ * data is publishable. Nothing is written if validation fails.
+ */
+export async function createAccountWithValues(
+  hostelId: string,
+  period: { month: number; year: number },
+  rawValues: unknown,
+  options: { publish?: boolean } = {},
+): Promise<MonthlyAccountDTO> {
+  const { month, year } = parseOrThrow(periodSchema, period);
+  await connectDB();
+  if (await MonthlyAccount.exists({ hostelId, month, year })) {
+    throw new ServiceError("DUPLICATE_PERIOD", MESSAGES.DUPLICATE_PERIOD);
+  }
+
+  const noSavedMembers = { members: [] } as unknown as MonthlyAccountLean;
+  const { values, calc, expenses } = await prepareSnapshot(hostelId, noSavedMembers, rawValues);
+  if (options.publish) {
+    const problems = publishProblems(values, calc);
+    if (problems.length) throw new ServiceError("NOT_PUBLISHABLE", problems[0], problems);
+  }
+
+  try {
+    const doc = await MonthlyAccount.create({
+      hostelId,
+      month,
+      year,
+      managerName: values.managerName,
+      status: options.publish ? "PUBLISHED" : "DRAFT",
+      publishedAt: options.publish ? new Date() : null,
+      ...snapshotFields(calc, expenses),
+    });
+    return toAccountDTO(doc.toObject() as MonthlyAccountLean);
+  } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      throw new ServiceError("DUPLICATE_PERIOD", MESSAGES.DUPLICATE_PERIOD);
+    }
+    throw error;
+  }
+}
+
 async function loadAccount(hostelId: string, id: string): Promise<MonthlyAccountLean> {
   assertObjectId(id);
   await connectDB();
@@ -427,9 +478,7 @@ export async function publishAccount(
   }
   const { values, calc, expenses } = await prepareSnapshot(hostelId, existing, rawValues);
 
-  const problems: string[] = [];
-  if (!values.managerName.trim()) problems.push(MESSAGES.MANAGER_REQUIRED);
-  problems.push(...calc.issues.map((i) => i.message));
+  const problems = publishProblems(values, calc);
   if (problems.length) throw new ServiceError("NOT_PUBLISHABLE", problems[0], problems);
 
   const doc = await MonthlyAccount.findOneAndUpdate(

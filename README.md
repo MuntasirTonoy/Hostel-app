@@ -10,7 +10,7 @@ is entirely in Bangla, and all calculations are automatic.
 - **Public report** (`/monthly-bill/<code>`): a hostel's latest *published* month, no
   login needed. Every hostel gets a short random code, e.g. `/monthly-bill/k7x2p9`.
   Older months are at `/monthly-bill/<code>/YYYY-MM`. The link is shown, with a copy
-  button, on the dashboard and in Admin সেটিংস.
+  button, on the dashboard and the profile page.
 
 ## Tech stack
 

@@ -38,7 +38,7 @@ export function ChangePasswordForm({ email }: { email: string }) {
   );
 
   return (
-    <Card className="max-w-md">
+    <Card>
       <CardHeader>
         <CardTitle>পাসওয়ার্ড পরিবর্তন</CardTitle>
         <CardDescription>লগইন ইমেইল: {email}</CardDescription>

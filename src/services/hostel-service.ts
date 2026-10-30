@@ -2,6 +2,8 @@ import { randomInt } from "node:crypto";
 import { Types } from "mongoose";
 import { connectDB } from "@/lib/mongodb";
 import { Hostel } from "@/models/Hostel";
+import { Member } from "@/models/Member";
+import { MonthlyAccount } from "@/models/MonthlyAccount";
 import { hostelSettingsSchema } from "@/schemas/auth";
 import { parseOrThrow } from "./validation";
 
@@ -56,6 +58,24 @@ export async function getHostelByCode(code: string): Promise<HostelDTO | null> {
   await connectDB();
   const doc = await Hostel.findOne({ code: normalized }).lean<HostelLean>();
   return doc ? toDTO(doc) : null;
+}
+
+export interface HostelStats {
+  activeMembers: number;
+  totalMembers: number;
+  publishedReports: number;
+  draftReports: number;
+}
+
+export async function getHostelStats(hostelId: string): Promise<HostelStats> {
+  await connectDB();
+  const [activeMembers, totalMembers, publishedReports, draftReports] = await Promise.all([
+    Member.countDocuments({ hostelId, isActive: true }),
+    Member.countDocuments({ hostelId }),
+    MonthlyAccount.countDocuments({ hostelId, status: "PUBLISHED" }),
+    MonthlyAccount.countDocuments({ hostelId, status: "DRAFT" }),
+  ]);
+  return { activeMembers, totalMembers, publishedReports, draftReports };
 }
 
 export async function updateHostel(hostelId: string, input: unknown): Promise<HostelDTO> {

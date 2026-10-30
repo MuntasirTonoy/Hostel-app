@@ -18,7 +18,7 @@ import { Admin } from "@/models/Admin";
 import { Member } from "@/models/Member";
 import { MonthlyAccount } from "@/models/MonthlyAccount";
 import { createMonthlyAccount } from "@/services/accounting-service";
-import { registerUser, verifyAdminCredentials } from "@/services/admin-service";
+import { registerUser, updateProfile, verifyAdminCredentials } from "@/services/admin-service";
 import { createMember, listMembers } from "@/services/member-service";
 
 setupTestDatabase();
@@ -48,6 +48,37 @@ describe("sign-up", () => {
       registerUser({ name: "x", email: "bad", hostelName: "", password: "short", confirmPassword: "nope" }),
     ).rejects.toMatchObject({ code: "VALIDATION" });
     expect(await Admin.countDocuments()).toBe(1);
+  });
+});
+
+describe("profile", () => {
+  it("updates the name freely but needs the current password to change email", async () => {
+    const user = await register("me@example.com");
+    const renamed = await updateProfile(user.userId, { name: "নতুন নাম", email: "me@example.com" });
+    expect(renamed).toMatchObject({ name: "নতুন নাম", email: "me@example.com" });
+
+    await expect(
+      updateProfile(user.userId, { name: "নতুন নাম", email: "new@example.com" }),
+    ).rejects.toMatchObject({ code: "VALIDATION" });
+    await expect(
+      updateProfile(user.userId, { name: "x", email: "new@example.com", currentPassword: "wrong-pass" }),
+    ).rejects.toMatchObject({ code: "VALIDATION" });
+
+    const moved = await updateProfile(user.userId, {
+      name: "নতুন নাম",
+      email: "New@Example.com",
+      currentPassword: "password123",
+    });
+    expect(moved.email).toBe("new@example.com");
+    expect(await verifyAdminCredentials("new@example.com", "password123")).not.toBeNull();
+  });
+
+  it("refuses an email that belongs to another account", async () => {
+    const a = await register("a@example.com");
+    await register("b@example.com");
+    await expect(
+      updateProfile(a.userId, { name: "A", email: "b@example.com", currentPassword: "password123" }),
+    ).rejects.toMatchObject({ code: "VALIDATION" });
   });
 });
 

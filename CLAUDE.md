@@ -21,8 +21,22 @@ and monthly record belongs to a hostel.
   - `/monthly-bill/<code>` shows that hostel's latest **published** month;
   - `/monthly-bill/<code>/YYYY-MM` shows an older month.
   - No login needed.
+  - The report pages live in the `(report)` route group, with **no navbar or footer**.
+    `/monthly-bill` itself is in `(site)`.
+- **Navigation:**
+  - `SiteHeader` appears on `(site)` pages **and** in the admin layout, with
+    `AdminMobileMenu` in its `menu` slot. The desktop sidebar sits below it.
+  - Logged-in users see ড্যাশবোর্ড instead of লগইন/রেজিস্টার, and the landing page's
+    main button becomes "ড্যাশবোর্ডে যান". লগআউট is in the sidebar.
 - **Admin:** `/login`, `/register`, and `/admin/*` (dashboard, new month, monthly records,
-  members, settings, `/admin/password`).
+  members, profile). **There is no settings page**: everything account- and hostel-related
+  is on `/admin/profile`, and `/admin/settings` redirects there. Don't re-add a settings page.
+  - `/admin/profile` shows the avatar initial, name, email and join date; hostel stats
+    (`getHostelStats`); the hostel public link; a name/email form (`updateProfile`; an
+    email change needs the current password and a unique email); the hostel-name form
+    (`SettingsForms`); and the change-password form (`#password`).
+  - `/admin/password` redirects there. The sidebar's প্রোফাইল item, the user label, and
+    the header link all point to it.
   - The dashboard is kept minimal: a title with the current month and status, the
     public-link card, the 8 summary cards (or one create button if no record exists), and
     a link to the public report.
@@ -58,7 +72,7 @@ npm run admin:create -- --email x@y.com --password "..." [--name "Name"] [--host
   and never hard-code the name.
 - **Font:** Hind Siliguri (`next/font/google`, CSS var `--font-hind-siliguri`).
 - **The word "Admin"** is used in UI text instead of প্রশাসক/প্রশাসনিক (e.g.
-  "Admin সেটিংস"). The public nav uses লগইন / রেজিস্টার. The rest of the UI is Bangla.
+  "Admin লগইন"). The public nav uses লগইন / রেজিস্টার. The rest of the UI is Bangla.
 - **Accounts:**
   - public self sign-up;
   - one hostel per user;
@@ -66,7 +80,10 @@ npm run admin:create -- --email x@y.com --password "..." [--name "Name"] [--host
   - no OAuth: email + bcrypt password in the `admins` collection;
   - change the password at `/admin/password`, or reset it with `npm run admin:create`.
   - `ADMIN_EMAILS` and `HOSTEL_NAME` are no longer used and were removed from `.env`.
-    `.env` holds only `MONGO_URI`, `MONGO_DB_NAME` and `AUTH_SECRET`.
+    `.env` holds `MONGO_URI`, `MONGO_DB_NAME`, `AUTH_SECRET` and `APP_URL`.
+- **Domain:** `APP_URL` (e.g. `https://hisab.in`, no trailing slash) builds shareable report
+  links via `getAppUrl()` in `src/lib/site.ts`. It's currently `http://localhost:3000`; set
+  the real domain when deploying.
 - **Hostel ID in public links:** a short random code of 6 characters from
   `abcdefghjkmnpqrstuvwxyz23456789` (`generateHostelCode`). It is unique and never chosen
   by the user.
@@ -86,7 +103,8 @@ npm run admin:create -- --email x@y.com --password "..." [--name "Name"] [--host
 ## Architecture
 
 ```
-src/app/(site)/          public pages, sharing SiteHeader + footer (landing, monthly-bill, login, register)
+src/app/(site)/          public pages, sharing SiteHeader + footer (landing, monthly-bill code entry, login, register)
+src/app/(report)/        bare layout: /monthly-bill/[hostel] and /monthly-bill/[hostel]/[period] (no navbar)
 src/app/admin/           protected pages; layout calls requireAdminPage(), sidebar nav
 src/app/api/auth/        Auth.js route handler
 src/features/accounting/ calculate.ts (pure calculator), actions.ts (server actions), editor/new-month UI
@@ -132,9 +150,13 @@ with a Bangla message) → Mongoose.
   - publishing needs a manager name, ≥1 member and total meals > 0;
   - published records are locked by updates conditioned on `status: "DRAFT"`.
     Editing requires an explicit, confirmed unpublish.
+  - `AccountActions` offers **unpublish** and **delete**, each with a confirmation dialog,
+    in the records list (icon buttons) and on the published-record page.
+  - `deleteAccount` refuses published records unless `allowPublished` is set;
+    `deleteAccountAction` sets it after the UI confirmation.
 - **Public page:** the hostel's latest published month, sorted by `{year: -1, month: -1}`.
   Drafts are never shown.
-- **Hostel name** lives on the `Hostel` document and is edited in Admin সেটিংস. The
+- **Hostel name** lives on the `Hostel` document and is edited on the profile page. The
   old `settings` collection is legacy and no longer read.
 
 ## Gotchas

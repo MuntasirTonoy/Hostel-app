@@ -41,3 +41,12 @@ export const changePasswordSchema = z
   });
 
 export const hostelSettingsSchema = z.object({ name: hostelNameSchema });
+
+/** Profile edit. The current password is required only when the email changes (checked in the service). */
+export const updateProfileSchema = z.object({
+  name: z.string().trim().min(1, "আপনার নাম লিখুন।").max(100, "নাম অনেক বড়।"),
+  email: emailSchema,
+  currentPassword: z.string().optional(),
+});
+
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

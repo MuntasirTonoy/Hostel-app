@@ -1,6 +1,6 @@
 "use client";
 
-import { Calculator, FileText, Home, LayoutDashboard, LogIn, UserPlus } from "lucide-react";
+import { Calculator, FileText, Home, LayoutDashboard, LogIn, UserPlus, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -16,7 +16,10 @@ const GUEST_LINKS = [
   { href: "/login", label: "লগইন", icon: LogIn },
   { href: "/register", label: "রেজিস্টার", icon: UserPlus },
 ];
-const USER_LINKS = [{ href: "/admin", label: "ড্যাশবোর্ড", icon: LayoutDashboard }];
+const USER_LINKS = [
+  { href: "/admin", label: "ড্যাশবোর্ড", icon: LayoutDashboard },
+  { href: "/admin/profile", label: "প্রোফাইল", icon: UserRound },
+];
 
 /**
  * Global navigation bar, shown on public pages and in the admin area.
@@ -25,8 +28,13 @@ const USER_LINKS = [{ href: "/admin", label: "ড্যাশবোর্ড", i
  */
 export function SiteHeader({ loggedIn, menu }: { loggedIn: boolean; menu?: ReactNode }) {
   const pathname = usePathname();
-  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
   const links = [...COMMON_LINKS, ...(loggedIn ? USER_LINKS : GUEST_LINKS)];
+  // Highlight only the most specific matching link (e.g. /admin/profile, not also /admin).
+  const activeHref = links
+    .map((l) => l.href)
+    .filter((href) => (href === "/" ? pathname === "/" : pathname.startsWith(href)))
+    .sort((a, b) => b.length - a.length)[0];
+  const isActive = (href: string) => href === activeHref;
 
   return (
     <header className="no-print sticky top-0 z-40 border-b bg-background/90 backdrop-blur">

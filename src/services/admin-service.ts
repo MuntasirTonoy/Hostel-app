@@ -3,7 +3,7 @@ import { Types } from "mongoose";
 import { connectDB } from "@/lib/mongodb";
 import { Admin } from "@/models/Admin";
 import { Hostel } from "@/models/Hostel";
-import { changePasswordSchema, registerSchema } from "@/schemas/auth";
+import { changePasswordSchema, registerSchema, updateProfileSchema } from "@/schemas/auth";
 import { ServiceError } from "./errors";
 import { createHostel, getHostelByOwner, type HostelDTO } from "./hostel-service";
 import { parseOrThrow } from "./validation";
@@ -93,6 +93,51 @@ export async function upsertAdmin(
   return existing
     ? (await getHostelByOwner(String(admin!._id)))!
     : createHostel(String(admin!._id), hostelName);
+}
+
+export interface ProfileDTO {
+  name: string;
+  email: string;
+  createdAt: string;
+}
+
+export async function getProfile(userId: string): Promise<ProfileDTO | null> {
+  if (!Types.ObjectId.isValid(userId)) return null;
+  await connectDB();
+  const admin = await Admin.findById(userId, { name: 1, email: 1, createdAt: 1 }).lean<{
+    name: string;
+    email: string;
+    createdAt: Date;
+  }>();
+  return admin
+    ? { name: admin.name, email: admin.email, createdAt: admin.createdAt.toISOString() }
+    : null;
+}
+
+/**
+ * Updates the user's name and email. Changing the email (which is the login)
+ * requires the current password and must not collide with another account.
+ */
+export async function updateProfile(userId: string, input: unknown): Promise<ProfileDTO> {
+  const data = parseOrThrow(updateProfileSchema, input);
+  await connectDB();
+  const admin = await Admin.findById(userId).lean<AdminLean>();
+  if (!admin) throw new ServiceError("NOT_FOUND", "অ্যাকাউন্ট খুঁজে পাওয়া যায়নি।");
+
+  if (data.email !== admin.email) {
+    const ok = data.currentPassword
+      ? await bcrypt.compare(data.currentPassword, admin.passwordHash)
+      : false;
+    if (!ok) {
+      throw new ServiceError("VALIDATION", "ইমেইল পরিবর্তন করতে বর্তমান পাসওয়ার্ড সঠিকভাবে লিখুন।");
+    }
+    if (await Admin.exists({ email: data.email, _id: { $ne: admin._id } })) {
+      throw new ServiceError("VALIDATION", "এই ইমেইল দিয়ে অন্য একটি অ্যাকাউন্ট আছে।");
+    }
+  }
+
+  await Admin.updateOne({ _id: admin._id }, { $set: { name: data.name, email: data.email } });
+  return (await getProfile(userId))!;
 }
 
 export async function changeAdminPassword(email: string, input: unknown): Promise<void> {

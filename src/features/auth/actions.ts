@@ -6,7 +6,12 @@ import { runAction, type ActionResult } from "@/lib/action-result";
 import { signIn, signOut } from "@/lib/auth";
 import { requireAdmin } from "@/lib/authz";
 import { loginSchema } from "@/schemas/auth";
-import { changeAdminPassword, registerUser } from "@/services/admin-service";
+import {
+  changeAdminPassword,
+  registerUser,
+  updateProfile,
+  type ProfileDTO,
+} from "@/services/admin-service";
 import { updateHostel, type HostelDTO } from "@/services/hostel-service";
 
 export interface FormState {
@@ -71,3 +76,12 @@ export async function updateHostelAction(values: unknown): Promise<ActionResult<
   });
 }
 
+
+export async function updateProfileAction(values: unknown): Promise<ActionResult<ProfileDTO>> {
+  return runAction(async () => {
+    const { userId } = await requireAdmin();
+    const profile = await updateProfile(userId, values);
+    revalidatePath("/admin", "layout");
+    return profile;
+  });
+}

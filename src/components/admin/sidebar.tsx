@@ -2,12 +2,11 @@
 
 import {
   FilePlus2,
-  KeyRound,
+  UserRound,
   Files,
   LayoutDashboard,
   LogOut,
   Menu,
-  Settings,
   UsersRound,
 } from "lucide-react";
 import Link from "next/link";
@@ -23,8 +22,7 @@ const NAV = [
   { href: "/admin/accounts/new", label: "নতুন মাসের হিসাব", icon: FilePlus2 },
   { href: "/admin/accounts", label: "মাসিক হিসাবসমূহ", icon: Files },
   { href: "/admin/members", label: "সদস্য ব্যবস্থাপনা", icon: UsersRound },
-  { href: "/admin/settings", label: "Admin সেটিংস", icon: Settings },
-  { href: "/admin/password", label: "পাসওয়ার্ড পরিবর্তন", icon: KeyRound },
+  { href: "/admin/profile", label: "প্রোফাইল", icon: UserRound },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -72,7 +70,12 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 export function AdminSidebar({ adminName }: { adminName: string }) {
   return (
     <aside className="no-print sticky top-14 hidden h-[calc(100svh-3.5rem)] w-64 shrink-0 flex-col gap-4 border-r bg-sidebar p-4 lg:flex">
-      <p className="truncate px-3 text-xs font-medium text-muted-foreground">{adminName}</p>
+      <Link
+        href="/admin/profile"
+        className="truncate px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
+      >
+        {adminName}
+      </Link>
       <NavLinks />
     </aside>
   );
@@ -92,7 +95,13 @@ export function AdminMobileMenu({ adminName }: { adminName: string }) {
         <SheetHeader className="p-0">
           <SheetTitle>মেনু</SheetTitle>
         </SheetHeader>
-        <p className="truncate px-3 text-xs font-medium text-muted-foreground">{adminName}</p>
+        <Link
+          href="/admin/profile"
+          onClick={() => setOpen(false)}
+          className="truncate px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
+        >
+          {adminName}
+        </Link>
         <NavLinks onNavigate={() => setOpen(false)} />
       </SheetContent>
     </Sheet>

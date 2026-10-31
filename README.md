@@ -16,7 +16,7 @@ is entirely in Bangla, and all calculations are automatic.
 
 Next.js 16 (App Router, Server Actions) · TypeScript · MongoDB + Mongoose ·
 Auth.js v5 (Credentials, no OAuth) · Tailwind CSS v4 · shadcn/ui · Lucide ·
-React Hook Form · Zod · Vitest · Font: Hind Siliguri
+React Hook Form · Zod · Vitest · Font: Kohinoor Bangla (ITF)
 
 ## Setup
 

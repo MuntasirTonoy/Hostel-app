@@ -16,7 +16,15 @@ Anyone can sign up (`/register`). Each user owns exactly **one hostel**, and eve
 and monthly record belongs to a hostel.
 
 - **Public:**
-  - `/` landing page;
+  - `/` landing page: hero (dotted grid + floating orange blobs, badge, CTA, check-list, and
+    `HeroPreview`: a decorative sample report card with a counting meal rate and floating
+    chips; float keyframes are `animate-float` in `globals.css`) → `ScrollPortrait` (sticky scroll section: the portrait
+    `public/images/manager.webp` is revealed first, then the lines appear one by one with
+    the current one highlighted; static under `prefers-reduced-motion`) → feature grid
+    (2 compact columns on mobile). Hero lines, the heading and the cards fade/slide in via
+    `Reveal` (`src/components/reveal.tsx`, IntersectionObserver, `motion-safe` only);
+  - the `(site)` footer: "© year APP_NAME · All rights reserved by Muntasir Tonoy" on the
+    left, "Coding by: Apex Codes" on the right (the user removed the font credit; don't re-add it);
   - `/monthly-bill` asks for a hostel code;
   - `/monthly-bill/<code>` shows that hostel's latest **published** month;
   - `/monthly-bill/<code>/YYYY-MM` shows an older month.
@@ -29,7 +37,7 @@ and monthly record belongs to a hostel.
   - `SiteHeader` appears on `(site)` pages **and** in the admin layout, with
     `AdminMobileMenu` in its `menu` slot. The desktop sidebar sits below it.
   - Logged-in users see ড্যাশবোর্ড instead of লগইন/রেজিস্টার, and the landing page's
-    main button becomes "ড্যাশবোর্ডে যান". লগআউট is in the sidebar.
+    main button becomes "ড্যাশবোর্ডে যান". লগআউট is at the bottom of the sidebar, directly below a profile card (avatar initial, user name, mess name) that links to `/admin/profile`.
 - **Admin:** `/login`, `/register`, and `/admin/*` (dashboard, new month, monthly records,
   members, profile). **There is no settings page**: everything account- and hostel-related
   is on `/admin/profile`, and `/admin/settings` redirects there. Don't re-add a settings page.
@@ -40,7 +48,7 @@ and monthly record belongs to a hostel.
     via `checkEmailAvailableAction` → `isEmailAvailable`) and only then shows the
     current-password field. `updateProfile` checks for an email in use before verifying
     the password, and maps a duplicate-key race to the same message.
-  - `/admin/password` redirects there. The sidebar's প্রোফাইল item, the user label, and
+  - `/admin/password` redirects there. The sidebar's প্রোফাইল item, the profile card above লগআউট, and
     the header link all point to it.
   - The dashboard is kept minimal: a title with the current month and status, the
     public-link card, the 8 summary cards (or one create button if no record exists), and
@@ -75,7 +83,13 @@ npm run admin:create -- --email x@y.com --password "..." [--name "Name"] [--host
 
 - **App name:** "হিসাব ইন", from `APP_NAME` in `src/lib/site.ts`. Use the constant
   and never hard-code the name.
-- **Font:** Hind Siliguri (`next/font/google`, CSS var `--font-hind-siliguri`).
+- **Font:** Kohinoor Bangla by the Indian Type Foundry. It replaced Li Ador Noirrit, which had
+  replaced Hind Siliguri. It loads through `next/font/local` in `src/app/layout.tsx` from
+  `src/fonts/kohinoor-bangla-medium.ttf`, a copy of the user's
+  `public/font/Kohinoor_Comforta.ttf`. The CSS var is `--font-kohinoor-bangla`.
+  - There is only the Medium (500) weight, so bold text is synthesized by the browser.
+  - It is a commercial ITF font. The user was told it needs an ITF web license and chose to
+    use it anyway.
 - **The word "Admin"** is used in UI text instead of প্রশাসক/প্রশাসনিক (e.g.
   "Admin লগইন"). The public nav uses লগইন / রেজিস্টার. The rest of the UI is Bangla.
 - **Accounts:**

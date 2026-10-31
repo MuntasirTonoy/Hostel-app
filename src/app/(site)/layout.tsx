@@ -9,8 +9,16 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
     <>
       <SiteHeader loggedIn={loggedIn} />
       {children}
-      <footer className="no-print border-t py-6 text-center text-sm text-muted-foreground">
-        {APP_NAME} — হোস্টেলের স্বচ্ছ ও স্বয়ংক্রিয় মাসিক হিসাব
+      <footer className="no-print border-t text-sm text-muted-foreground">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-6 text-center sm:flex-row sm:justify-between sm:text-left">
+          <p>
+            © {new Date().getFullYear()} {APP_NAME} · All rights reserved by{" "}
+            <span className="font-medium text-foreground">Muntasir Tonoy</span>
+          </p>
+          <p>
+            Coding by: <span className="font-medium text-primary">Apex Codes</span>
+          </p>
+        </div>
       </footer>
     </>
   );

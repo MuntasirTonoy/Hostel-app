@@ -7,12 +7,12 @@ export const metadata: Metadata = { title: { default: "ড্যাশবোর�
 
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const admin = await requireAdminPage();
-  const label = `${admin.hostel.name} · ${admin.name}`;
+  const user = { name: admin.name, hostelName: admin.hostel.name };
   return (
     <div className="flex min-h-svh flex-1 flex-col bg-muted/30">
-      <SiteHeader loggedIn menu={<AdminMobileMenu adminName={label} />} />
+      <SiteHeader loggedIn menu={<AdminMobileMenu user={user} />} />
       <div className="flex flex-1">
-        <AdminSidebar adminName={label} />
+        <AdminSidebar user={user} />
         <div className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</div>
       </div>
     </div>

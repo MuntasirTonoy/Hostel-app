@@ -31,7 +31,9 @@ function isActive(pathname: string, href: string) {
   return pathname.startsWith(href);
 }
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+export type SidebarUser = { name: string; hostelName: string };
+
+function NavLinks({ user, onNavigate }: { user: SidebarUser; onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
     <nav className="flex flex-1 flex-col gap-1">
@@ -53,36 +55,45 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           </Link>
         );
       })}
-      <form action={logoutAction} className="mt-auto pt-4">
-        <Button
-          type="submit"
-          variant="ghost"
-          className="w-full justify-start gap-3 px-3 text-red-600 hover:text-red-700"
+      <div className="mt-auto space-y-1 border-t pt-4">
+        <Link
+          href="/admin/profile"
+          onClick={onNavigate}
+          className="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-sidebar-accent"
         >
-          <LogOut className="size-4" /> লগআউট
-        </Button>
-      </form>
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
+            {user.name.trim().charAt(0).toUpperCase() || "?"}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-semibold">{user.name}</span>
+            <span className="block truncate text-xs text-muted-foreground">{user.hostelName}</span>
+          </span>
+        </Link>
+        <form action={logoutAction}>
+          <Button
+            type="submit"
+            variant="ghost"
+            className="w-full justify-start gap-3 px-3 text-red-600 hover:text-red-700"
+          >
+            <LogOut className="size-4" /> লগআউট
+          </Button>
+        </form>
+      </div>
     </nav>
   );
 }
 
 /** Desktop sidebar; sits below the global SiteHeader (h-14). */
-export function AdminSidebar({ adminName }: { adminName: string }) {
+export function AdminSidebar({ user }: { user: SidebarUser }) {
   return (
-    <aside className="no-print sticky top-14 hidden h-[calc(100svh-3.5rem)] w-64 shrink-0 flex-col gap-4 border-r bg-sidebar p-4 lg:flex">
-      <Link
-        href="/admin/profile"
-        className="truncate px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
-      >
-        {adminName}
-      </Link>
-      <NavLinks />
+    <aside className="no-print sticky top-14 hidden h-[calc(100svh-3.5rem)] w-64 shrink-0 flex-col border-r bg-sidebar p-4 lg:flex">
+      <NavLinks user={user} />
     </aside>
   );
 }
 
 /** Mobile menu button (placed inside the SiteHeader) that opens the sidebar links. */
-export function AdminMobileMenu({ adminName }: { adminName: string }) {
+export function AdminMobileMenu({ user }: { user: SidebarUser }) {
   const [open, setOpen] = useState(false);
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -95,14 +106,7 @@ export function AdminMobileMenu({ adminName }: { adminName: string }) {
         <SheetHeader className="p-0">
           <SheetTitle>মেনু</SheetTitle>
         </SheetHeader>
-        <Link
-          href="/admin/profile"
-          onClick={() => setOpen(false)}
-          className="truncate px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
-        >
-          {adminName}
-        </Link>
-        <NavLinks onNavigate={() => setOpen(false)} />
+        <NavLinks user={user} onNavigate={() => setOpen(false)} />
       </SheetContent>
     </Sheet>
   );

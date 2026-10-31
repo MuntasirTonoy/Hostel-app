@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, Loader2, Pencil, Trash2, UserPlus, X } from "lucide-react";
+import { Ban, Check, CircleCheck, Loader2, Pencil, Trash2, UserPlus, X } from "lucide-react";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -55,7 +55,11 @@ export function MembersManager({ initialMembers }: { initialMembers: MemberDTO[]
     if (!editing) return;
     const parsed = memberNameSchema.safeParse(editing.name);
     if (!parsed.success) return void toast.error(parsed.error.issues[0].message);
-    update(editing.id, { name: parsed.data }, "নাম হালনাগাদ হয়েছে। পূর্ববর্তী হিসাবের নাম অপরিবর্তিত থাকবে।");
+    update(
+      editing.id,
+      { name: parsed.data },
+      "নাম হালনাগাদ হয়েছে। পূর্ববর্তী হিসাবের নাম অপরিবর্তিত থাকবে।",
+    );
   }
 
   function remove(id: string) {
@@ -76,7 +80,9 @@ export function MembersManager({ initialMembers }: { initialMembers: MemberDTO[]
       <Card>
         <CardHeader>
           <CardTitle>নতুন সদস্য যুক্ত করুন</CardTitle>
-          <CardDescription>স্থায়ী সদস্য তালিকায় যুক্ত হবে এবং পরবর্তী মাসের হিসাবে নির্বাচন করা যাবে।</CardDescription>
+          <CardDescription>
+            স্থায়ী সদস্য তালিকায় যুক্ত হবে এবং পরবর্তী মাসের হিসাবে নির্বাচন করা যাবে।
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onCreate} className="flex flex-col gap-2 sm:flex-row sm:items-start">
@@ -95,8 +101,9 @@ export function MembersManager({ initialMembers }: { initialMembers: MemberDTO[]
         <CardHeader>
           <CardTitle>স্থায়ী সদস্য তালিকা</CardTitle>
           <CardDescription>
-            মোট {toBanglaDigits(members.length)} জন, সক্রিয় {toBanglaDigits(activeCount)} জন। হোস্টেল ছেড়ে গেলে সদস্যকে
-            নিষ্ক্রিয় করুন — তিনি পরবর্তী মাসে স্বয়ংক্রিয়ভাবে যুক্ত হবেন না, কিন্তু আগের হিসাব অক্ষত থাকবে।
+            মোট {toBanglaDigits(members.length)} জন, সক্রিয় {toBanglaDigits(activeCount)} জন। হোস্টেল ছেড়ে
+            গেলে সদস্যকে নিষ্ক্রিয় করুন — তিনি পরবর্তী মাসে স্বয়ংক্রিয়ভাবে যুক্ত হবেন না, কিন্তু আগের হিসাব
+            অক্ষত থাকবে।
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -105,9 +112,9 @@ export function MembersManager({ initialMembers }: { initialMembers: MemberDTO[]
           ) : (
             <ul className="divide-y rounded-lg border">
               {members.map((m) => (
-                <li key={m.id} className="flex flex-wrap items-center gap-3 px-3 py-2.5">
+                <li key={m.id} className="flex items-center gap-2 px-3 py-2.5 sm:gap-3">
                   {editing?.id === m.id ? (
-                    <div className="flex flex-1 items-center gap-2">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       <Input
                         autoFocus
                         value={editing.name}
@@ -126,18 +133,22 @@ export function MembersManager({ initialMembers }: { initialMembers: MemberDTO[]
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex flex-1 items-center gap-2">
-                      <span className={m.isActive ? "font-medium" : "text-muted-foreground line-through"}>
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <span
+                        className={`truncate ${m.isActive ? "font-medium" : "text-muted-foreground line-through"}`}
+                      >
                         {m.name}
                       </span>
                       {m.isActive ? (
-                        <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300">সক্রিয়</Badge>
+                        <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300">
+                          সক্রিয়
+                        </Badge>
                       ) : (
                         <Badge variant="secondary">নিষ্ক্রিয়</Badge>
                       )}
                     </div>
                   )}
-                  <div className="flex items-center gap-1">
+                  <div className="flex shrink-0 items-center gap-1">
                     {busyId === m.id ? <Loader2 className="size-4 animate-spin" /> : null}
                     <Button
                       size="icon"
@@ -150,6 +161,9 @@ export function MembersManager({ initialMembers }: { initialMembers: MemberDTO[]
                     <Button
                       size="sm"
                       variant="outline"
+                      className="max-sm:size-8 max-sm:px-0"
+                      aria-label={m.isActive ? `${m.name} কে নিষ্ক্রিয় করুন` : `${m.name} কে সক্রিয় করুন`}
+                      title={m.isActive ? "নিষ্ক্রিয় করুন" : "সক্রিয় করুন"}
                       disabled={busyId === m.id}
                       onClick={() =>
                         update(
@@ -159,7 +173,8 @@ export function MembersManager({ initialMembers }: { initialMembers: MemberDTO[]
                         )
                       }
                     >
-                      {m.isActive ? "নিষ্ক্রিয় করুন" : "সক্রিয় করুন"}
+                      {m.isActive ? <Ban className="sm:hidden" /> : <CircleCheck className="sm:hidden" />}
+                      <span className="max-sm:hidden">{m.isActive ? "নিষ্ক্রিয় করুন" : "সক্রিয় করুন"}</span>
                     </Button>
                     <ConfirmAction
                       destructive

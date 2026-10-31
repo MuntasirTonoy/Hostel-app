@@ -54,6 +54,11 @@ export function ReportActions({
           clone.style.padding = "24px";
           clone.querySelectorAll<HTMLElement>(".print-table-wrap").forEach((el) => {
             el.style.overflow = "visible";
+            el.style.display = "block";
+          });
+          // The PDF always uses the table, never the mobile cards.
+          clone.querySelectorAll<HTMLElement>(".report-cards").forEach((el) => {
+            el.style.display = "none";
           });
           clone.querySelectorAll<HTMLElement>(".print-only").forEach((el) => {
             el.style.display = "block";

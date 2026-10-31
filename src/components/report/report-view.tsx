@@ -22,12 +22,12 @@ export type ReportData = Pick<
 
 const COLUMNS = [
   "নাম",
-  "জমা (৳)",
+  "জমা",
   "মিল সংখ্যা",
-  "অতিরিক্ত খরচ (৳)",
-  "মোট খরচ (৳)",
-  "বকেয়া আছে (৳)",
-  "ফেরত পাবে (৳)",
+  "অতিরিক্ত খরচ",
+  "মোট খরচ",
+  "বকেয়া আছে",
+  "ফেরত পাবে",
 ] as const;
 
 export function ReportView({
@@ -75,7 +75,60 @@ export function ReportView({
         </p>
       </header>
 
-      <div className="print-table-wrap overflow-x-auto rounded-xl border">
+      {/* Mobile: one card per member. Print and PDF (rendered at 1200px) always use the table. */}
+      <div className="report-cards space-y-3 md:hidden print:hidden">
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
+          <span className="text-sm text-muted-foreground">মিল রেট</span>
+          <span className="text-lg font-semibold text-primary tabular-nums">
+            {report.mealRate === null ? "—" : `${formatAmount(report.mealRate)} টাকা`}
+          </span>
+        </div>
+
+        {report.members.length === 0 ? (
+          <p className="rounded-xl border px-3 py-8 text-center text-muted-foreground">
+            কোনো সদস্য যুক্ত করা হয়নি।
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {report.members.map((m) => (
+              <li key={m.memberId} className="rounded-xl border bg-card p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="min-w-0 truncate font-semibold">{m.name}</p>
+                  <BalanceChip outstanding={m.outstandingBalance} refund={m.refundAmount} />
+                </div>
+                <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                  <CardStat label="জমা" value={`৳ ${formatAmount(m.investment)}`} />
+                  <CardStat label="মিল সংখ্যা" value={formatMealUnits(mealCountToUnits(m.mealCount))} />
+                  <CardStat label="অতিরিক্ত খরচ" value={`৳ ${formatAmount(m.extraCost)}`} />
+                  <CardStat label="মোট খরচ" value={`৳ ${formatAmount(m.totalCost)}`} strong />
+                </dl>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="rounded-xl border bg-muted/60 p-3">
+          <p className="font-semibold">সর্বমোট</p>
+          <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+            <CardStat label="জমা" value={`৳ ${formatAmount(report.totalDeposits)}`} />
+            <CardStat label="মিল সংখ্যা" value={formatMealUnits(mealCountToUnits(report.totalMeals))} />
+            <CardStat label="অতিরিক্ত খরচ" value={`৳ ${formatAmount(report.totalExtraCost)}`} />
+            <CardStat label="মোট খরচ" value={`৳ ${formatAmount(report.totalMemberCost)}`} strong />
+            <CardStat
+              label="বকেয়া"
+              value={`৳ ${formatAmount(totalOutstanding)}`}
+              className="text-red-600 dark:text-red-400"
+            />
+            <CardStat
+              label="ফেরত"
+              value={`৳ ${formatAmount(totalRefund)}`}
+              className="text-emerald-700 dark:text-emerald-400"
+            />
+          </dl>
+        </div>
+      </div>
+
+      <div className="print-table-wrap hidden overflow-x-auto rounded-xl border md:block print:block">
         <table className="w-full min-w-[760px] text-sm sm:text-base">
           <thead className="bg-muted/60">
             <tr>
@@ -193,5 +246,47 @@ export function ReportView({
         </p>
       ) : null}
     </article>
+  );
+}
+
+function CardStat({
+  label,
+  value,
+  strong,
+  className,
+}: {
+  label: string;
+  value: string;
+  strong?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className="flex min-w-0 items-baseline justify-between gap-2">
+      <dt className="truncate text-muted-foreground">{label}</dt>
+      <dd className={cn("tabular-nums whitespace-nowrap", strong ? "font-semibold" : "font-medium", className)}>
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+/** Shows বকেয়া (red) or ফেরত (green); a settled member gets a neutral chip. */
+function BalanceChip({ outstanding, refund }: { outstanding: number; refund: number }) {
+  if (outstanding > 0) {
+    return (
+      <span className="shrink-0 rounded-md bg-red-50 px-2 py-0.5 text-sm font-semibold text-red-600 tabular-nums dark:bg-red-950/40 dark:text-red-400">
+        বকেয়া ৳ {formatAmount(outstanding)}
+      </span>
+    );
+  }
+  if (refund > 0) {
+    return (
+      <span className="shrink-0 rounded-md bg-emerald-50 px-2 py-0.5 text-sm font-semibold text-emerald-700 tabular-nums dark:bg-emerald-950/40 dark:text-emerald-400">
+        ফেরত ৳ {formatAmount(refund)}
+      </span>
+    );
+  }
+  return (
+    <span className="shrink-0 rounded-md bg-muted px-2 py-0.5 text-sm text-muted-foreground">পরিশোধিত</span>
   );
 }

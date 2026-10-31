@@ -54,6 +54,11 @@ and monthly record belongs to a hostel.
     public-link card, the 8 summary cards (or one create button if no record exists), and
     a link to the public report.
   - Don't re-add lists that duplicate sidebar pages.
+  - **Mobile:** `/admin/accounts` shows one card per month below `md` and the table from
+    `md` up. On the members page, নিষ্ক্রিয় / সক্রিয় করুন becomes an icon-only button
+    below `sm` (`Ban` / `CircleCheck`). `ReportView` (published record + public bill) shows a
+    meal-rate banner, one card per member and a সর্বমোট card below `md`. Print and PDF always use the
+    table (`print:hidden` / `print:block`, and the PDF `onclone` hides `.report-cards`). The `(site)` footer stacks into centered lines on mobile.
 
 ## Stack
 

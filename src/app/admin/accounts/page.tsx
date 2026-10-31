@@ -34,57 +34,99 @@ export default async function AccountsPage() {
           <p className="text-muted-foreground">এখনো কোনো মাসিক হিসাব তৈরি করা হয়নি।</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
-          <table className="w-full min-w-[720px] text-sm">
-            <thead className="bg-muted/60 text-left">
-              <tr>
-                <th className="px-4 py-3 font-semibold">মাস</th>
-                <th className="px-4 py-3 font-semibold">ম্যানেজার</th>
-                <th className="px-4 py-3 text-right font-semibold">সদস্য</th>
-                <th className="px-4 py-3 text-right font-semibold">মোট মিল</th>
-                <th className="px-4 py-3 text-right font-semibold">মিল রেট (৳)</th>
-                <th className="px-4 py-3 text-right font-semibold">মোট খরচ (৳)</th>
-                <th className="px-4 py-3 font-semibold">অবস্থা</th>
-                <th className="px-4 py-3">
-                  <span className="sr-only">কার্যক্রম</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {accounts.map((a) => (
-                <tr key={a.id} className="border-t hover:bg-muted/40">
-                  <td className="px-4 py-3 font-medium">
-                    <Link href={`/admin/accounts/${a.id}`} className="text-primary hover:underline">
+        <>
+          {/* Mobile: one card per month */}
+          <ul className="grid gap-3 md:hidden">
+            {accounts.map((a) => (
+              <li key={a.id} className="rounded-xl border bg-card p-4 shadow-xs">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <Link
+                      href={`/admin/accounts/${a.id}`}
+                      className="block truncate text-base font-semibold text-primary hover:underline"
+                    >
                       {periodLabel(a.month, a.year)}
                     </Link>
-                  </td>
-                  <td className="px-4 py-3">{a.managerName || "—"}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{toBanglaDigits(a.totalMembers)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">
-                    {formatMealUnits(mealCountToUnits(a.totalMeals))}
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums">
-                    {a.mealRate === null ? "—" : formatAmount(a.mealRate)}
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums">{formatAmount(a.totalMemberCost)}</td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={a.status} />
-                  </td>
-                  <td className="px-2 py-2">
-                    <div className="flex justify-end">
-                      <AccountActions
-                        compact
-                        id={a.id}
-                        status={a.status}
-                        label={periodLabel(a.month, a.year)}
-                      />
+                    <p className="truncate text-xs text-muted-foreground">
+                      ম্যানেজার: {a.managerName || "—"}
+                    </p>
+                  </div>
+                  <StatusBadge status={a.status} />
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                  {[
+                    ["সদস্য", toBanglaDigits(a.totalMembers)],
+                    ["মোট মিল", formatMealUnits(mealCountToUnits(a.totalMeals))],
+                    ["মিল রেট", a.mealRate === null ? "—" : `৳ ${formatAmount(a.mealRate)}`],
+                    ["মোট খরচ", `৳ ${formatAmount(a.totalMemberCost)}`],
+                  ].map(([label, value]) => (
+                    <div key={label} className="min-w-0 rounded-lg bg-muted/50 px-3 py-2">
+                      <dt className="text-xs text-muted-foreground">{label}</dt>
+                      <dd className="truncate font-semibold tabular-nums">{value}</dd>
                     </div>
-                  </td>
+                  ))}
+                </dl>
+                <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3">
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/admin/accounts/${a.id}`}>বিস্তারিত দেখুন</Link>
+                  </Button>
+                  <AccountActions compact id={a.id} status={a.status} label={periodLabel(a.month, a.year)} />
+                </div>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead className="bg-muted/60 text-left">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">মাস</th>
+                  <th className="px-4 py-3 font-semibold">ম্যানেজার</th>
+                  <th className="px-4 py-3 text-right font-semibold">সদস্য</th>
+                  <th className="px-4 py-3 text-right font-semibold">মোট মিল</th>
+                  <th className="px-4 py-3 text-right font-semibold">মিল রেট (৳)</th>
+                  <th className="px-4 py-3 text-right font-semibold">মোট খরচ (৳)</th>
+                  <th className="px-4 py-3 font-semibold">অবস্থা</th>
+                  <th className="px-4 py-3">
+                    <span className="sr-only">কার্যক্রম</span>
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {accounts.map((a) => (
+                  <tr key={a.id} className="border-t hover:bg-muted/40">
+                    <td className="px-4 py-3 font-medium">
+                      <Link href={`/admin/accounts/${a.id}`} className="text-primary hover:underline">
+                        {periodLabel(a.month, a.year)}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3">{a.managerName || "—"}</td>
+                    <td className="px-4 py-3 text-right tabular-nums">{toBanglaDigits(a.totalMembers)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums">
+                      {formatMealUnits(mealCountToUnits(a.totalMeals))}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums">
+                      {a.mealRate === null ? "—" : formatAmount(a.mealRate)}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums">{formatAmount(a.totalMemberCost)}</td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={a.status} />
+                    </td>
+                    <td className="px-2 py-2">
+                      <div className="flex justify-end">
+                        <AccountActions
+                          compact
+                          id={a.id}
+                          status={a.status}
+                          label={periodLabel(a.month, a.year)}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

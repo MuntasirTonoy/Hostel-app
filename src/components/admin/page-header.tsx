@@ -1,5 +1,8 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
+import { useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import type { AccountStatus } from "@/types/accounting";
 
@@ -24,11 +27,12 @@ export function PageHeader({
 }
 
 export function StatusBadge({ status }: { status: AccountStatus }) {
+  const { t } = useI18n();
   return status === "PUBLISHED" ? (
-    <Badge className="bg-primary text-primary-foreground">প্রকাশিত</Badge>
+    <Badge className="bg-primary text-primary-foreground">{t.common.published}</Badge>
   ) : (
     <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-      খসড়া
+      {t.common.draft}
     </Badge>
   );
 }

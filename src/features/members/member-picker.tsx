@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useI18n } from "@/i18n/client";
 import type { MemberDTO } from "@/types/accounting";
 import { createMemberAction } from "./actions";
 
@@ -33,12 +34,14 @@ export function MemberPicker({
   const [newName, setNewName] = useState("");
   const [selectKey, setSelectKey] = useState(0);
   const [pending, startTransition] = useTransition();
+  const { t } = useI18n();
+  const p = t.members.picker;
   const available = registry.filter((m) => m.isActive && !selectedIds.includes(m.id));
 
   function createAndAdd() {
     const name = newName.trim();
     if (!name) {
-      toast.error("নতুন সদস্যের নাম লিখুন।");
+      toast.error(p.nameRequired);
       return;
     }
     startTransition(async () => {
@@ -50,7 +53,7 @@ export function MemberPicker({
       onRegistryChange?.(result.data);
       onAdd({ memberId: result.data.id, name: result.data.name });
       setNewName("");
-      toast.success(`"${result.data.name}" সদস্য তালিকায় যুক্ত হয়েছে।`);
+      toast.success(p.added(result.data.name));
     });
   }
 
@@ -65,11 +68,9 @@ export function MemberPicker({
           setSelectKey((k) => k + 1);
         }}
       >
-        <SelectTrigger className="w-full" aria-label="সদস্য যোগ করুন">
+        <SelectTrigger className="w-full" aria-label={p.addLabel}>
           <SelectValue
-            placeholder={
-              available.length ? "নিবন্ধিত সদস্য যোগ করুন" : "যোগ করার মতো আর কোনো সক্রিয় সদস্য নেই"
-            }
+            placeholder={available.length ? p.addRegistered : p.noneAvailable}
           />
         </SelectTrigger>
         <SelectContent>
@@ -84,8 +85,8 @@ export function MemberPicker({
         <Input
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
-          placeholder="নতুন সদস্যের নাম"
-          aria-label="নতুন সদস্যের নাম"
+          placeholder={p.newNamePlaceholder}
+          aria-label={p.newNamePlaceholder}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -95,7 +96,7 @@ export function MemberPicker({
         />
         <Button type="button" variant="secondary" onClick={createAndAdd} disabled={pending}>
           {pending ? <Loader2 className="animate-spin" /> : <UserPlus />}
-          নতুন সদস্য
+          {p.newMember}
         </Button>
       </div>
     </div>

@@ -5,25 +5,28 @@ import { PageHeader, StatusBadge } from "@/components/admin/page-header";
 import { Button } from "@/components/ui/button";
 import { AccountActions } from "@/features/accounting/account-actions";
 import { requireAdminPage } from "@/lib/authz";
-import { formatAmount, formatMealUnits, mealCountToUnits, toBanglaDigits } from "@/lib/money";
-import { periodLabel } from "@/lib/months";
+import { getI18n } from "@/i18n/server";
 import { listAccounts } from "@/services/accounting-service";
 
-export const metadata: Metadata = { title: "মাসিক হিসাবসমূহ" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t.accounts.title };
+}
 
 export default async function AccountsPage() {
   const { hostel } = await requireAdminPage();
-  const accounts = await listAccounts(hostel.id);
+  const [accounts, { t, f }] = await Promise.all([listAccounts(hostel.id), getI18n()]);
+  const L = t.accounts;
 
   return (
     <div>
       <PageHeader
-        title="মাসিক হিসাবসমূহ"
-        description="সকল খসড়া ও প্রকাশিত মাসিক হিসাব"
+        title={L.title}
+        description={L.description}
         actions={
           <Button asChild>
             <Link href="/admin/accounts/new">
-              <FilePlus2 /> নতুন মাসের হিসাব তৈরি করুন
+              <FilePlus2 /> {L.createNew}
             </Link>
           </Button>
         }
@@ -31,7 +34,7 @@ export default async function AccountsPage() {
       {accounts.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card py-14 text-center">
           <Files className="size-10 text-muted-foreground" />
-          <p className="text-muted-foreground">এখনো কোনো মাসিক হিসাব তৈরি করা হয়নি।</p>
+          <p className="text-muted-foreground">{L.empty}</p>
         </div>
       ) : (
         <>
@@ -45,20 +48,20 @@ export default async function AccountsPage() {
                       href={`/admin/accounts/${a.id}`}
                       className="block truncate text-base font-semibold text-primary hover:underline"
                     >
-                      {periodLabel(a.month, a.year)}
+                      {f.period(a.month, a.year)}
                     </Link>
                     <p className="truncate text-xs text-muted-foreground">
-                      ম্যানেজার: {a.managerName || "—"}
+                      {t.common.manager(a.managerName || "—")}
                     </p>
                   </div>
                   <StatusBadge status={a.status} />
                 </div>
                 <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
                   {[
-                    ["সদস্য", toBanglaDigits(a.totalMembers)],
-                    ["মোট মিল", formatMealUnits(mealCountToUnits(a.totalMeals))],
-                    ["মিল রেট", a.mealRate === null ? "—" : `৳ ${formatAmount(a.mealRate)}`],
-                    ["মোট খরচ", `৳ ${formatAmount(a.totalMemberCost)}`],
+                    [L.members, f.num(a.totalMembers)],
+                    [L.totalMeals, f.meals(a.totalMeals)],
+                    [L.mealRate, a.mealRate === null ? "—" : `৳ ${f.amount(a.mealRate)}`],
+                    [L.totalCost, `৳ ${f.amount(a.totalMemberCost)}`],
                   ].map(([label, value]) => (
                     <div key={label} className="min-w-0 rounded-lg bg-muted/50 px-3 py-2">
                       <dt className="text-xs text-muted-foreground">{label}</dt>
@@ -68,9 +71,9 @@ export default async function AccountsPage() {
                 </dl>
                 <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3">
                   <Button asChild size="sm" variant="outline">
-                    <Link href={`/admin/accounts/${a.id}`}>বিস্তারিত দেখুন</Link>
+                    <Link href={`/admin/accounts/${a.id}`}>{L.viewDetails}</Link>
                   </Button>
-                  <AccountActions compact id={a.id} status={a.status} label={periodLabel(a.month, a.year)} />
+                  <AccountActions compact id={a.id} status={a.status} label={f.period(a.month, a.year)} />
                 </div>
               </li>
             ))}
@@ -79,15 +82,15 @@ export default async function AccountsPage() {
             <table className="w-full min-w-[720px] text-sm">
               <thead className="bg-muted/60 text-left">
                 <tr>
-                  <th className="px-4 py-3 font-semibold">মাস</th>
-                  <th className="px-4 py-3 font-semibold">ম্যানেজার</th>
-                  <th className="px-4 py-3 text-right font-semibold">সদস্য</th>
-                  <th className="px-4 py-3 text-right font-semibold">মোট মিল</th>
-                  <th className="px-4 py-3 text-right font-semibold">মিল রেট (৳)</th>
-                  <th className="px-4 py-3 text-right font-semibold">মোট খরচ (৳)</th>
-                  <th className="px-4 py-3 font-semibold">অবস্থা</th>
+                  <th className="px-4 py-3 font-semibold">{L.columns.month}</th>
+                  <th className="px-4 py-3 font-semibold">{L.columns.manager}</th>
+                  <th className="px-4 py-3 text-right font-semibold">{L.columns.members}</th>
+                  <th className="px-4 py-3 text-right font-semibold">{L.columns.totalMeals}</th>
+                  <th className="px-4 py-3 text-right font-semibold">{L.columns.mealRate}</th>
+                  <th className="px-4 py-3 text-right font-semibold">{L.columns.totalCost}</th>
+                  <th className="px-4 py-3 font-semibold">{L.columns.status}</th>
                   <th className="px-4 py-3">
-                    <span className="sr-only">কার্যক্রম</span>
+                    <span className="sr-only">{L.columns.actions}</span>
                   </th>
                 </tr>
               </thead>
@@ -96,18 +99,18 @@ export default async function AccountsPage() {
                   <tr key={a.id} className="border-t hover:bg-muted/40">
                     <td className="px-4 py-3 font-medium">
                       <Link href={`/admin/accounts/${a.id}`} className="text-primary hover:underline">
-                        {periodLabel(a.month, a.year)}
+                        {f.period(a.month, a.year)}
                       </Link>
                     </td>
                     <td className="px-4 py-3">{a.managerName || "—"}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">{toBanglaDigits(a.totalMembers)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums">{f.num(a.totalMembers)}</td>
                     <td className="px-4 py-3 text-right tabular-nums">
-                      {formatMealUnits(mealCountToUnits(a.totalMeals))}
+                      {f.meals(a.totalMeals)}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums">
-                      {a.mealRate === null ? "—" : formatAmount(a.mealRate)}
+                      {a.mealRate === null ? "—" : f.amount(a.mealRate)}
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums">{formatAmount(a.totalMemberCost)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums">{f.amount(a.totalMemberCost)}</td>
                     <td className="px-4 py-3">
                       <StatusBadge status={a.status} />
                     </td>
@@ -117,7 +120,7 @@ export default async function AccountsPage() {
                           compact
                           id={a.id}
                           status={a.status}
-                          label={periodLabel(a.month, a.year)}
+                          label={f.period(a.month, a.year)}
                         />
                       </div>
                     </td>

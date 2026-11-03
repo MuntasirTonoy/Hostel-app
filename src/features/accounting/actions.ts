@@ -10,6 +10,7 @@ import {
   deleteAccount,
   getAccountByPeriod,
   getCarryForwardMembers,
+  getPreviousPublishedAccount,
   publishAccount,
   saveDraft,
   unpublishAccount,
@@ -18,6 +19,7 @@ import {
 } from "@/services/accounting-service";
 import { parseOrThrow } from "@/services/validation";
 import type { MonthlyAccountDTO } from "@/types/accounting";
+import { summaryMetrics, type SummaryMetrics } from "./report-data";
 
 // Every action resolves the caller's hostel on the server and passes it to the
 // service; a client can never choose which hostel it operates on.
@@ -30,6 +32,8 @@ function revalidateAccounting() {
 export interface PrepareNewMonthResult {
   existingId: string | null;
   carryForward: CarryForwardResult;
+  /** The previous published month, for the preview summary comparison. */
+  previous: SummaryMetrics | null;
 }
 
 /** Looks up the carry-forward member list for a period (and whether it already exists). */
@@ -41,8 +45,15 @@ export async function prepareNewMonthAction(
     const { hostel } = await requireAdmin();
     const period = parseOrThrow(periodSchema, { month, year });
     const existing = await getAccountByPeriod(hostel.id, period.month, period.year);
-    const carryForward = await getCarryForwardMembers(hostel.id, period.month, period.year);
-    return { existingId: existing?.id ?? null, carryForward };
+    const [carryForward, previous] = await Promise.all([
+      getCarryForwardMembers(hostel.id, period.month, period.year),
+      getPreviousPublishedAccount(hostel.id, period.month, period.year),
+    ]);
+    return {
+      existingId: existing?.id ?? null,
+      carryForward,
+      previous: previous ? summaryMetrics(previous) : null,
+    };
   });
 }
 

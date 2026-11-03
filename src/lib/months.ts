@@ -1,4 +1,4 @@
-import { toBanglaDigits } from "./money";
+import { localizeDigits, type NumberLocale } from "./money";
 
 export const BANGLA_MONTHS = [
   "জানুয়ারি",
@@ -15,13 +15,32 @@ export const BANGLA_MONTHS = [
   "ডিসেম্বর",
 ] as const;
 
-export function monthName(month: number): string {
-  return BANGLA_MONTHS[month - 1] ?? "";
+export const ENGLISH_MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+
+export function monthNames(locale: NumberLocale = "bn"): readonly string[] {
+  return locale === "bn" ? BANGLA_MONTHS : ENGLISH_MONTHS;
 }
 
-/** e.g. (10, 2026) -> "অক্টোবর ২০২৬" */
-export function periodLabel(month: number, year: number): string {
-  return `${monthName(month)} ${toBanglaDigits(year)}`;
+export function monthName(month: number, locale: NumberLocale = "bn"): string {
+  return monthNames(locale)[month - 1] ?? "";
+}
+
+/** e.g. (10, 2026) -> "অক্টোবর ২০২৬" (bn) or "October 2026" (en) */
+export function periodLabel(month: number, year: number, locale: NumberLocale = "bn"): string {
+  return `${monthName(month, locale)} ${localizeDigits(year, locale)}`;
 }
 
 /** Sortable period number, e.g. (10, 2026) -> 202610 */
@@ -55,8 +74,8 @@ export function currentPeriod(now: Date = new Date()): { month: number; year: nu
   return { month, year };
 }
 
-/** Formats a date in Bangla, Bangladesh time, e.g. "৩১ অক্টোবর ২০২৬". */
-export function formatBanglaDate(date: Date): string {
+/** Formats a date in Bangladesh time, e.g. "৩১ অক্টোবর ২০২৬" (bn) or "31 October 2026" (en). */
+export function formatDate(date: Date, locale: NumberLocale = "bn"): string {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Dhaka",
     year: "numeric",
@@ -64,5 +83,6 @@ export function formatBanglaDate(date: Date): string {
     day: "numeric",
   }).formatToParts(date);
   const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
-  return `${toBanglaDigits(get("day"))} ${monthName(get("month"))} ${toBanglaDigits(get("year"))}`;
+  const n = (t: string) => localizeDigits(get(t), locale);
+  return `${n("day")} ${monthName(get("month"), locale)} ${n("year")}`;
 }

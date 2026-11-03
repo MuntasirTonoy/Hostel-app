@@ -205,6 +205,27 @@ export async function getLatestPublishedAccount(
   return doc ? toAccountDTO(doc) : null;
 }
 
+/**
+ * The most recent *published* record before the given period (used to show
+ * month-over-month changes in the admin summary). Drafts are skipped because
+ * their figures are not final.
+ */
+export async function getPreviousPublishedAccount(
+  hostelId: string,
+  month: number,
+  year: number,
+): Promise<MonthlyAccountDTO | null> {
+  await connectDB();
+  const doc = await MonthlyAccount.findOne({
+    hostelId,
+    status: "PUBLISHED",
+    $or: [{ year: { $lt: year } }, { year, month: { $lt: month } }],
+  })
+    .sort(periodSort)
+    .lean<MonthlyAccountLean>();
+  return doc ? toAccountDTO(doc) : null;
+}
+
 export async function listPublishedPeriods(hostelId: string): Promise<PeriodRef[]> {
   await connectDB();
   const docs = await MonthlyAccount.find({ hostelId, status: "PUBLISHED" }, { month: 1, year: 1 })

@@ -4,7 +4,8 @@ import { connectDB } from "@/lib/mongodb";
 import { Hostel } from "@/models/Hostel";
 import { Member } from "@/models/Member";
 import { MonthlyAccount } from "@/models/MonthlyAccount";
-import { hostelSettingsSchema } from "@/schemas/auth";
+import { HOSTEL_ID_PATTERN, hostelIdFormSchema, hostelIdSchema, hostelSettingsSchema } from "@/schemas/auth";
+import { MESSAGES, ServiceError } from "./errors";
 import { parseOrThrow } from "./validation";
 
 export interface HostelDTO {
@@ -17,9 +18,9 @@ type HostelLean = { _id: Types.ObjectId; code: string; name: string };
 
 const toDTO = (h: HostelLean): HostelDTO => ({ id: String(h._id), code: h.code, name: h.name });
 
-// No look-alike characters (0/o, 1/l/i) so codes are easy to read and type.
+// No look-alike characters (0/o, 1/l/i) so generated IDs are easy to read and type.
+// (Admins may later choose their own Hostel ID; see HOSTEL_ID_PATTERN.)
 const CODE_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
-export const HOSTEL_CODE_PATTERN = /^[a-hjkmnp-z2-9]{6}$/;
 
 export function generateHostelCode(length = 6): string {
   return Array.from({ length }, () => CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]).join("");
@@ -54,7 +55,7 @@ export async function getHostelByOwner(ownerId: string): Promise<HostelDTO | nul
 
 export async function getHostelByCode(code: string): Promise<HostelDTO | null> {
   const normalized = code.trim().toLowerCase();
-  if (!HOSTEL_CODE_PATTERN.test(normalized)) return null;
+  if (!HOSTEL_ID_PATTERN.test(normalized)) return null;
   await connectDB();
   const doc = await Hostel.findOne({ code: normalized }).lean<HostelLean>();
   return doc ? toDTO(doc) : null;
@@ -88,4 +89,35 @@ export async function updateHostel(hostelId: string, input: unknown): Promise<Ho
   ).lean<HostelLean>();
   if (!doc) throw new Error("Hostel not found");
   return toDTO(doc);
+}
+
+/** True when no *other* hostel uses this Hostel ID (and the ID is well-formed). */
+export async function isHostelIdAvailable(hostelId: string, code: string): Promise<boolean> {
+  const parsed = hostelIdSchema.safeParse(code);
+  if (!parsed.success) return false;
+  await connectDB();
+  return !(await Hostel.exists({ code: parsed.data, _id: { $ne: hostelId } }));
+}
+
+/**
+ * Changes the hostel's public Hostel ID (the code in /monthly-bill/<id>). The old
+ * link stops working. Availability is checked first; the unique index catches races.
+ */
+export async function updateHostelId(hostelId: string, input: unknown): Promise<HostelDTO> {
+  const { code } = parseOrThrow(hostelIdFormSchema, input);
+  if (!(await isHostelIdAvailable(hostelId, code))) {
+    throw new ServiceError("VALIDATION", MESSAGES.HOSTEL_ID_TAKEN);
+  }
+  try {
+    const doc = await Hostel.findByIdAndUpdate(
+      hostelId,
+      { $set: { code } },
+      { returnDocument: "after", runValidators: true },
+    ).lean<HostelLean>();
+    if (!doc) throw new Error("Hostel not found");
+    return toDTO(doc);
+  } catch (error) {
+    if (isDuplicateKeyError(error)) throw new ServiceError("VALIDATION", MESSAGES.HOSTEL_ID_TAKEN);
+    throw error;
+  }
 }

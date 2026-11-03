@@ -6,13 +6,29 @@ export const objectIdSchema = z
   .string()
   .regex(/^[a-f\d]{24}$/i, "অবৈধ আইডি।");
 
+/** Labels of the numeric fields; their messages are translated in src/i18n/messages.ts. */
+export const DECIMAL_FIELD_LABELS = [
+  "জমা",
+  "মিল সংখ্যা",
+  "বাজার খরচ",
+  "চালের খরচ",
+  "জ্বালানি খরচ",
+  "অন্যান্য অতিরিক্ত খরচ",
+] as const;
+type DecimalFieldLabel = (typeof DECIMAL_FIELD_LABELS)[number];
+
+export const decimalMessages = {
+  negative: (label: string) => `${label} ঋণাত্মক হতে পারবে না।`,
+  invalid: (label: string) => `${label} সঠিক সংখ্যায় লিখুন (সর্বোচ্চ দুই দশমিক ঘর)।`,
+};
+
 /** Non-negative decimal (up to 2 places) entered as text; Bangla digits allowed. */
-const decimalField = (label: string) =>
+const decimalField = (label: DecimalFieldLabel) =>
   z
     .string()
     .trim()
-    .refine((s) => !toAsciiDigits(s).startsWith("-"), `${label} ঋণাত্মক হতে পারবে না।`)
-    .refine(isValidDecimal2, `${label} সঠিক সংখ্যায় লিখুন (সর্বোচ্চ দুই দশমিক ঘর)।`);
+    .refine((s) => !toAsciiDigits(s).startsWith("-"), decimalMessages.negative(label))
+    .refine(isValidDecimal2, decimalMessages.invalid(label));
 
 export const monthSchema = z.coerce
   .number({ message: "মাস নির্বাচন করুন।" })

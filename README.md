@@ -2,14 +2,17 @@
 
 A full-stack, multi-hostel Next.js app for monthly hostel meal accounting: members,
 deposits, meal counts, expenses, meal rate, outstanding balances and refunds. The UI
-is entirely in Bangla, and all calculations are automatic.
+is in Bangla by default, with an English option (the বাংলা / English button in the
+header), and all calculations are automatic.
 
 - **Sign up** (`/register`): anyone can create an account. Each account owns one hostel
   with its own members and records, fully separate from other hostels.
 - **Admin dashboard** (`/admin`): members, monthly records, draft/publish, hostel settings.
-- **Public report** (`/monthly-bill/<code>`): a hostel's latest *published* month, no
-  login needed. Every hostel gets a short random code, e.g. `/monthly-bill/k7x2p9`.
-  Older months are at `/monthly-bill/<code>/YYYY-MM`. The link is shown, with a copy
+- **Public report** (`/monthly-bill/<hostel-id>`): a hostel's latest *published* month, no
+  login needed. Every hostel gets a random **Hostel ID** on sign-up, e.g. `/monthly-bill/k7x2p9`,
+  which the admin can change on the profile page (3–30 lowercase letters, digits and
+  hyphens; availability is checked live; the old link stops working).
+  Older months are at `/monthly-bill/<hostel-id>/YYYY-MM`. The link is shown, with a copy
   button, on the dashboard and the profile page.
 
 ## Tech stack
@@ -118,7 +121,7 @@ the live preview.
 ## Data model (database `hostel`)
 
 - `admins`: user accounts (email, name, bcrypt password hash).
-- `hostels`: one per user (`code` is unique and public, `name`, `ownerId`).
+- `hostels`: one per user (`code` = the public Hostel ID, unique and admin-changeable; `name`, `ownerId`).
 - `members`: each hostel's permanent registry (`hostelId`, `name`, `isActive`).
 - `monthlyaccounts`: one per hostel per period, enforced by a unique index on
   `(hostelId, year, month)`.

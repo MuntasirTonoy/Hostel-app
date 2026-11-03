@@ -8,7 +8,7 @@ import {
 import { getHostelByCode, type HostelDTO } from "./hostel-service";
 
 export interface PublicReportData {
-  /** null when the hostel code does not exist. */
+  /** null when no hostel has this Hostel ID (code). */
   hostel: Pick<HostelDTO, "code" | "name"> | null;
   report: MonthlyAccountDTO | null;
   periods: PeriodRef[];

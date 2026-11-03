@@ -3,6 +3,8 @@ import localFont from "next/font/local";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { I18nProvider } from "@/i18n/client";
+import { getI18n, getLocale } from "@/i18n/server";
 import { APP_NAME } from "@/lib/site";
 import "./globals.css";
 
@@ -16,23 +18,30 @@ const kohinoorBangla = localFont({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: APP_NAME,
-    template: `%s | ${APP_NAME}`,
-  },
-  description: "হোস্টেলের মাসিক মিল, জমা, খরচ, বকেয়া ও ফেরতের স্বয়ংক্রিয় হিসাব।",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return {
+    title: {
+      default: APP_NAME,
+      template: `%s | ${APP_NAME}`,
+    },
+    description: t.meta.description,
+  };
+}
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // The UI language comes from the `lang` cookie (LanguageToggle); Bangla by default.
+  const locale = await getLocale();
   return (
     // next-themes sets the theme class on <html> before hydration.
-    <html lang="bn" className={`${kohinoorBangla.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang={locale} className={`${kohinoorBangla.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <TooltipProvider>{children}</TooltipProvider>
-          <Toaster richColors position="top-center" />
-        </ThemeProvider>
+        <I18nProvider locale={locale}>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            <TooltipProvider>{children}</TooltipProvider>
+            <Toaster richColors position="top-center" />
+          </ThemeProvider>
+        </I18nProvider>
       </body>
     </html>
   );

@@ -12,6 +12,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useI18n } from "@/i18n/client";
 
 /** A trigger that asks for confirmation (in-page dialog, not a browser confirm). */
 export function ConfirmAction({
@@ -29,6 +30,7 @@ export function ConfirmAction({
   onConfirm: () => void;
   destructive?: boolean;
 }) {
+  const { t } = useI18n();
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
@@ -40,7 +42,7 @@ export function ConfirmAction({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>বাতিল</AlertDialogCancel>
+          <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             className={destructive ? "bg-red-600 text-white hover:bg-red-700" : undefined}

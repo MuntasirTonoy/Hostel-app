@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/i18n/client";
 import type { AccountStatus } from "@/types/accounting";
 import { deleteAccountAction, unpublishAccountAction } from "./actions";
 import { ConfirmAction } from "./confirm-button";
@@ -22,19 +23,21 @@ export function AccountActions({
 }: {
   id: string;
   status: AccountStatus;
-  /** e.g. "অক্টোবর ২০২৬" — shown in the confirmation text. */
+  /** The localized period, e.g. "অক্টোবর ২০২৬" — shown in the confirmation text. */
   label: string;
   compact?: boolean;
   afterDelete?: "refresh" | "list";
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const { t } = useI18n();
+  const A = t.accountActions;
 
   function unpublish() {
     startTransition(async () => {
       const result = await unpublishAccountAction(id);
       if (!result.ok) return void toast.error(result.error);
-      toast.success(`${label} মাসের হিসাব অপ্রকাশিত করা হয়েছে। এখন সম্পাদনা করতে পারবেন।`);
+      toast.success(A.unpublished(label));
       router.refresh();
     });
   }
@@ -43,7 +46,7 @@ export function AccountActions({
     startTransition(async () => {
       const result = await deleteAccountAction(id);
       if (!result.ok) return void toast.error(result.error);
-      toast.success(`${label} মাসের হিসাব মুছে ফেলা হয়েছে।`);
+      toast.success(A.deleted(label));
       if (afterDelete === "list") router.push("/admin/accounts");
       else router.refresh();
     });
@@ -56,40 +59,29 @@ export function AccountActions({
       {pending && compact ? <Loader2 className="size-4 animate-spin text-muted-foreground" /> : null}
       {status === "PUBLISHED" ? (
         <ConfirmAction
-          title="হিসাবটি অপ্রকাশিত করবেন?"
-          description={
-            <p>
-              {label} মাসের হিসাবটি পাবলিক পাতা থেকে সরে যাবে এবং খসড়া হিসেবে সম্পাদনার জন্য খুলবে। সংশোধনের পর আবার
-              প্রকাশ করতে হবে।
-            </p>
-          }
-          confirmLabel="অপ্রকাশিত করুন"
+          title={A.unpublishTitle}
+          description={<p>{A.unpublishDescription(label)}</p>}
+          confirmLabel={A.unpublish}
           onConfirm={unpublish}
           trigger={
             <Button
               variant="outline"
               size={size}
               disabled={pending}
-              aria-label="অপ্রকাশিত করুন"
-              title="অপ্রকাশিত করুন"
+              aria-label={A.unpublish}
+              title={A.unpublish}
             >
               {pending && !compact ? <Loader2 className="animate-spin" /> : <LockOpen />}
-              {compact ? null : "অপ্রকাশিত করুন"}
+              {compact ? null : A.unpublish}
             </Button>
           }
         />
       ) : null}
       <ConfirmAction
         destructive
-        title="হিসাবটি মুছে ফেলবেন?"
-        description={
-          <p>
-            {label} মাসের হিসাবটি স্থায়ীভাবে মুছে যাবে
-            {status === "PUBLISHED" ? " এবং পাবলিক পাতা থেকেও সরে যাবে" : ""}। এটি আর ফিরিয়ে আনা যাবে না। সদস্য
-            তালিকা অপরিবর্তিত থাকবে।
-          </p>
-        }
-        confirmLabel="মুছে ফেলুন"
+        title={A.deleteTitle}
+        description={<p>{A.deleteDescription(label, status === "PUBLISHED")}</p>}
+        confirmLabel={A.delete}
         onConfirm={remove}
         trigger={
           <Button
@@ -97,11 +89,11 @@ export function AccountActions({
             size={size}
             disabled={pending}
             className={compact ? "text-muted-foreground hover:text-red-600" : undefined}
-            aria-label="মুছে ফেলুন"
-            title="মুছে ফেলুন"
+            aria-label={A.delete}
+            title={A.delete}
           >
             <Trash2 />
-            {compact ? null : "মুছে ফেলুন"}
+            {compact ? null : A.delete}
           </Button>
         }
       />

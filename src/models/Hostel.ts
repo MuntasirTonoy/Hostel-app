@@ -2,8 +2,8 @@ import { Schema, model, models, type InferSchemaType, type Model } from "mongoos
 
 /**
  * A hostel. Each user (Admin) owns exactly one hostel, and all members and
- * monthly records belong to a hostel. `code` is the short random public ID used
- * in report links: /monthly-bill/<code>.
+ * monthly records belong to a hostel. `code` is the public Hostel ID used
+ * in report links (/monthly-bill/<code>): random on sign-up, changeable by the admin.
  */
 const hostelSchema = new Schema(
   {

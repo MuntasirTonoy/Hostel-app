@@ -1,5 +1,5 @@
 import type { ReportData } from "@/components/report/report-view";
-import { unitsToMealCount } from "@/lib/money";
+import { mealCountToUnits, unitsToMealCount } from "@/lib/money";
 import type { CalcResult, Expenses } from "@/types/accounting";
 
 /** Builds report-table data from a live calculation (used by the admin preview). */
@@ -31,5 +31,43 @@ export function calcToReportData(
     totalExtraCost: calc.summary.totalExtraCost,
     extraCostPerMember: calc.summary.extraCostPerMember,
     totalMemberCost: calc.summary.totalMemberCost,
+  };
+}
+
+/** The figures shown in the "মাসিক খরচের সারসংক্ষেপ" grid, used to compare two months. */
+export interface SummaryMetrics {
+  month: number;
+  year: number;
+  totalMembers: number;
+  /** Meal hundredths. */
+  totalMealUnits: number;
+  totalDeposits: number;
+  marketExpense: number;
+  riceExpense: number;
+  fuelExpense: number;
+  otherExtraExpense: number;
+  totalExtraCost: number;
+  extraCostPerMember: number | null;
+  totalMemberCost: number;
+  totalOutstanding: number;
+  totalRefund: number;
+}
+
+export function summaryMetrics(report: ReportData): SummaryMetrics {
+  return {
+    month: report.month,
+    year: report.year,
+    totalMembers: report.totalMembers,
+    totalMealUnits: mealCountToUnits(report.totalMeals),
+    totalDeposits: report.totalDeposits,
+    marketExpense: report.expenses.marketExpense,
+    riceExpense: report.expenses.riceExpense,
+    fuelExpense: report.expenses.fuelExpense,
+    otherExtraExpense: report.expenses.otherExtraExpense,
+    totalExtraCost: report.totalExtraCost,
+    extraCostPerMember: report.extraCostPerMember,
+    totalMemberCost: report.totalMemberCost,
+    totalOutstanding: report.members.reduce((s, m) => s + m.outstandingBalance, 0),
+    totalRefund: report.members.reduce((s, m) => s + m.refundAmount, 0),
   };
 }

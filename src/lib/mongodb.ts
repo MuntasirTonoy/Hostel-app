@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { MESSAGES } from "@/services/errors";
 
 type MongooseCache = {
   conn: typeof mongoose | null;
@@ -13,7 +14,7 @@ globalForMongoose.__mongoose = cache;
 
 export class DatabaseConnectionError extends Error {
   constructor(cause?: unknown) {
-    super("ডাটাবেসের সাথে সংযোগ স্থাপন করা যায়নি। কিছুক্ষণ পর আবার চেষ্টা করুন।");
+    super(MESSAGES.DATABASE);
     this.name = "DatabaseConnectionError";
     this.cause = cause;
   }

@@ -42,6 +42,26 @@ export const changePasswordSchema = z
 
 export const hostelSettingsSchema = z.object({ name: hostelNameSchema });
 
+/**
+ * Hostel ID: the public identifier in report links (/monthly-bill/<id>). Generated
+ * as a random 6-character code on sign-up and changeable by the admin: 3–30
+ * lowercase letters, digits and single hyphens (not at either end).
+ */
+export const HOSTEL_ID_PATTERN = /^(?=.{3,30}$)[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export const hostelIdSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(3, "হোস্টেল আইডি কমপক্ষে ৩ অক্ষরের হতে হবে।")
+  .max(30, "হোস্টেল আইডি সর্বোচ্চ ৩০ অক্ষরের হতে পারে।")
+  .regex(
+    /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+    "শুধু ইংরেজি ছোট হাতের অক্ষর (a-z), সংখ্যা (0-9) ও মাঝে হাইফেন (-) ব্যবহার করুন।",
+  );
+
+export const hostelIdFormSchema = z.object({ code: hostelIdSchema });
+
 /** Profile edit. The current password is required only when the email changes (checked in the service). */
 export const updateProfileSchema = z.object({
   name: z.string().trim().min(1, "আপনার নাম লিখুন।").max(100, "নাম অনেক বড়।"),

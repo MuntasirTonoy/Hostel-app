@@ -11,20 +11,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldError } from "@/components/field-error";
+import { useI18n } from "@/i18n/client";
 import { registerSchema, type RegisterInput } from "@/schemas/auth";
 import { registerAction } from "./actions";
 
 const FIELDS = [
-  { name: "name", label: "আপনার নাম", type: "text", autoComplete: "name" },
-  { name: "email", label: "ইমেইল", type: "email", autoComplete: "email" },
-  { name: "hostelName", label: "হোস্টেলের নাম", type: "text", autoComplete: "organization" },
-  { name: "password", label: "পাসওয়ার্ড (কমপক্ষে ৮ অক্ষর)", type: "password", autoComplete: "new-password" },
-  { name: "confirmPassword", label: "পাসওয়ার্ড আবার লিখুন", type: "password", autoComplete: "new-password" },
+  { name: "name", type: "text", autoComplete: "name" },
+  { name: "email", type: "email", autoComplete: "email" },
+  { name: "hostelName", type: "text", autoComplete: "organization" },
+  { name: "password", type: "password", autoComplete: "new-password" },
+  { name: "confirmPassword", type: "password", autoComplete: "new-password" },
 ] as const;
 
 export function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const { t } = useI18n();
+  const a = t.auth;
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
     defaultValues: { name: "", email: "", hostelName: "", password: "", confirmPassword: "" },
@@ -44,8 +47,8 @@ export function RegisterForm() {
         <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Calculator />
         </div>
-        <CardTitle className="text-xl">নতুন অ্যাকাউন্ট খুলুন</CardTitle>
-        <CardDescription>আপনার হোস্টেলের মাসিক হিসাব রাখা শুরু করুন — বিনামূল্যে</CardDescription>
+        <CardTitle className="text-xl">{a.registerTitle}</CardTitle>
+        <CardDescription>{a.registerDescription}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="space-y-4">
@@ -54,20 +57,20 @@ export function RegisterForm() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           ) : null}
-          {FIELDS.map(({ name, label, type, autoComplete }) => (
+          {FIELDS.map(({ name, type, autoComplete }) => (
             <div key={name} className="space-y-2">
-              <Label htmlFor={name}>{label}</Label>
+              <Label htmlFor={name}>{a.registerFields[name]}</Label>
               <Input id={name} type={type} autoComplete={autoComplete} {...form.register(name)} />
               <FieldError message={form.formState.errors[name]?.message} />
             </div>
           ))}
           <Button type="submit" className="w-full" size="lg" disabled={pending}>
-            {pending ? <Loader2 className="animate-spin" /> : <UserPlus />} রেজিস্টার করুন
+            {pending ? <Loader2 className="animate-spin" /> : <UserPlus />} {a.registerSubmit}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
-            আগে থেকেই অ্যাকাউন্ট আছে?{" "}
+            {a.haveAccount}{" "}
             <Link href="/login" className="font-medium text-primary underline underline-offset-4">
-              লগইন করুন
+              {a.loginLink}
             </Link>
           </p>
         </form>

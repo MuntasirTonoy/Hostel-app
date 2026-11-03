@@ -4,22 +4,24 @@ import { Calculator, FileText, Home, LayoutDashboard, LogIn, UserPlus, UserRound
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { useI18n } from "@/i18n/client";
 import { APP_NAME } from "@/lib/site";
 import { cn } from "@/lib/utils";
+import { LanguageToggle } from "./language-toggle";
 import { ThemeToggle } from "./theme-toggle";
 
 const COMMON_LINKS = [
-  { href: "/", label: "হোম", icon: Home },
-  { href: "/monthly-bill", label: "মাসিক হিসাব", icon: FileText },
-];
+  { href: "/", key: "home", icon: Home },
+  { href: "/monthly-bill", key: "monthlyBill", icon: FileText },
+] as const;
 const GUEST_LINKS = [
-  { href: "/login", label: "লগইন", icon: LogIn },
-  { href: "/register", label: "রেজিস্টার", icon: UserPlus },
-];
+  { href: "/login", key: "login", icon: LogIn },
+  { href: "/register", key: "register", icon: UserPlus },
+] as const;
 const USER_LINKS = [
-  { href: "/admin", label: "ড্যাশবোর্ড", icon: LayoutDashboard },
-  { href: "/admin/profile", label: "প্রোফাইল", icon: UserRound },
-];
+  { href: "/admin", key: "dashboard", icon: LayoutDashboard },
+  { href: "/admin/profile", key: "profile", icon: UserRound },
+] as const;
 
 /**
  * Global navigation bar, shown on public pages and in the admin area.
@@ -28,10 +30,11 @@ const USER_LINKS = [
  */
 export function SiteHeader({ loggedIn, menu }: { loggedIn: boolean; menu?: ReactNode }) {
   const pathname = usePathname();
+  const { t } = useI18n();
   const links = [...COMMON_LINKS, ...(loggedIn ? USER_LINKS : GUEST_LINKS)];
   // Highlight only the most specific matching link (e.g. /admin/profile, not also /admin).
   const activeHref = links
-    .map((l) => l.href)
+    .map((l) => l.href as string)
     .filter((href) => (href === "/" ? pathname === "/" : pathname.startsWith(href)))
     .sort((a, b) => b.length - a.length)[0];
   const isActive = (href: string) => href === activeHref;
@@ -47,22 +50,26 @@ export function SiteHeader({ loggedIn, menu }: { loggedIn: boolean; menu?: React
           <span className="hidden sm:inline">{APP_NAME}</span>
         </Link>
         <nav className="flex items-center gap-1">
-          {links.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              aria-current={isActive(href) ? "page" : undefined}
-              aria-label={label}
-              className={cn(
-                "flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                isActive(href) && "bg-muted text-foreground",
-              )}
-            >
-              <Icon className="size-4" />
-              <span className="hidden sm:inline">{label}</span>
-            </Link>
-          ))}
+          {links.map(({ href, key, icon: Icon }) => {
+            const label = t.nav[key];
+            return (
+              <Link
+                key={href}
+                href={href}
+                aria-current={isActive(href) ? "page" : undefined}
+                aria-label={label}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                  isActive(href) && "bg-muted text-foreground",
+                )}
+              >
+                <Icon className="size-4" />
+                <span className="hidden sm:inline">{label}</span>
+              </Link>
+            );
+          })}
         </nav>
+        <LanguageToggle />
         <ThemeToggle />
       </div>
     </header>

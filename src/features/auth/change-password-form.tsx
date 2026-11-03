@@ -11,18 +11,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldError } from "@/components/field-error";
+import { useI18n } from "@/i18n/client";
 import { changePasswordSchema } from "@/schemas/auth";
 import { changePasswordAction } from "./actions";
 
 const FIELDS = [
-  ["currentPassword", "বর্তমান পাসওয়ার্ড", "current-password"],
-  ["newPassword", "নতুন পাসওয়ার্ড (কমপক্ষে ৮ অক্ষর)", "new-password"],
-  ["confirmPassword", "নতুন পাসওয়ার্ড আবার লিখুন", "new-password"],
+  ["currentPassword", "current-password"],
+  ["newPassword", "new-password"],
+  ["confirmPassword", "new-password"],
 ] as const;
 
 export function ChangePasswordForm({ email }: { email: string }) {
   const [saving, startSaving] = useTransition();
   const [show, setShow] = useState(false);
+  const { t } = useI18n();
+  const p = t.profile.password;
   const form = useForm<z.infer<typeof changePasswordSchema>>({
     resolver: zodResolver(changePasswordSchema),
     defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
@@ -33,21 +36,21 @@ export function ChangePasswordForm({ email }: { email: string }) {
       const result = await changePasswordAction(values);
       if (!result.ok) return void toast.error(result.error);
       form.reset();
-      toast.success("পাসওয়ার্ড পরিবর্তন করা হয়েছে। পরেরবার নতুন পাসওয়ার্ড দিয়ে লগইন করুন।");
+      toast.success(p.changed);
     }),
   );
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>পাসওয়ার্ড পরিবর্তন</CardTitle>
-        <CardDescription>লগইন ইমেইল: {email}</CardDescription>
+        <CardTitle>{p.title}</CardTitle>
+        <CardDescription>{p.loginEmail(email)}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="space-y-4">
-          {FIELDS.map(([name, label, autoComplete]) => (
+          {FIELDS.map(([name, autoComplete]) => (
             <div key={name} className="space-y-2">
-              <Label htmlFor={name}>{label}</Label>
+              <Label htmlFor={name}>{p.fields[name]}</Label>
               <Input
                 id={name}
                 type={show ? "text" : "password"}
@@ -59,10 +62,10 @@ export function ChangePasswordForm({ email }: { email: string }) {
           ))}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <Button type="button" variant="ghost" size="sm" onClick={() => setShow((s) => !s)}>
-              {show ? <EyeOff /> : <Eye />} {show ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখুন"}
+              {show ? <EyeOff /> : <Eye />} {show ? p.hide : p.show}
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving ? <Loader2 className="animate-spin" /> : <KeyRound />} পাসওয়ার্ড পরিবর্তন করুন
+              {saving ? <Loader2 className="animate-spin" /> : <KeyRound />} {p.submit}
             </Button>
           </div>
         </form>

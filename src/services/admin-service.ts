@@ -4,7 +4,7 @@ import { connectDB } from "@/lib/mongodb";
 import { Admin } from "@/models/Admin";
 import { Hostel } from "@/models/Hostel";
 import { changePasswordSchema, registerSchema, updateProfileSchema } from "@/schemas/auth";
-import { ServiceError } from "./errors";
+import { MESSAGES, ServiceError } from "./errors";
 import { createHostel, getHostelByOwner, type HostelDTO } from "./hostel-service";
 import { parseOrThrow } from "./validation";
 
@@ -50,7 +50,7 @@ export async function registerUser(input: unknown): Promise<UserContext> {
   await connectDB();
 
   if (await Admin.exists({ email: data.email })) {
-    throw new ServiceError("VALIDATION", "এই ইমেইল দিয়ে ইতোমধ্যে একটি অ্যাকাউন্ট আছে। লগইন করুন।");
+    throw new ServiceError("VALIDATION", MESSAGES.EMAIL_REGISTERED);
   }
 
   const passwordHash = await bcrypt.hash(data.password, BCRYPT_ROUNDS);
@@ -59,7 +59,7 @@ export async function registerUser(input: unknown): Promise<UserContext> {
     admin = await Admin.create({ email: data.email, name: data.name, passwordHash });
   } catch (error) {
     if ((error as { code?: number }).code === 11000) {
-      throw new ServiceError("VALIDATION", "এই ইমেইল দিয়ে ইতোমধ্যে একটি অ্যাকাউন্ট আছে। লগইন করুন।");
+      throw new ServiceError("VALIDATION", MESSAGES.EMAIL_REGISTERED);
     }
     throw error;
   }
@@ -114,7 +114,7 @@ export async function getProfile(userId: string): Promise<ProfileDTO | null> {
     : null;
 }
 
-export const EMAIL_IN_USE_MESSAGE = "এই ইমেইল দিয়ে অন্য একটি অ্যাকাউন্ট আছে।";
+export const EMAIL_IN_USE_MESSAGE = MESSAGES.EMAIL_IN_USE;
 
 /** True when no *other* account uses this email. */
 export async function isEmailAvailable(userId: string, email: string): Promise<boolean> {
@@ -134,7 +134,7 @@ export async function updateProfile(userId: string, input: unknown): Promise<Pro
   const data = parseOrThrow(updateProfileSchema, input);
   await connectDB();
   const admin = await Admin.findById(userId).lean<AdminLean>();
-  if (!admin) throw new ServiceError("NOT_FOUND", "অ্যাকাউন্ট খুঁজে পাওয়া যায়নি।");
+  if (!admin) throw new ServiceError("NOT_FOUND", MESSAGES.USER_NOT_FOUND);
 
   if (data.email !== admin.email) {
     // 1. Is the email already in use?
@@ -146,7 +146,7 @@ export async function updateProfile(userId: string, input: unknown): Promise<Pro
       ? await bcrypt.compare(data.currentPassword, admin.passwordHash)
       : false;
     if (!ok) {
-      throw new ServiceError("VALIDATION", "ইমেইল পরিবর্তন করতে বর্তমান পাসওয়ার্ড সঠিকভাবে লিখুন।");
+      throw new ServiceError("VALIDATION", MESSAGES.EMAIL_CHANGE_PASSWORD);
     }
   }
 
@@ -165,7 +165,7 @@ export async function updateProfile(userId: string, input: unknown): Promise<Pro
 export async function changeAdminPassword(email: string, input: unknown): Promise<void> {
   const data = parseOrThrow(changePasswordSchema, input);
   const admin = await verifyAdminCredentials(email, data.currentPassword);
-  if (!admin) throw new ServiceError("VALIDATION", "বর্তমান পাসওয়ার্ড সঠিক নয়।");
+  if (!admin) throw new ServiceError("VALIDATION", MESSAGES.WRONG_CURRENT_PASSWORD);
   const passwordHash = await bcrypt.hash(data.newPassword, BCRYPT_ROUNDS);
   await Admin.updateOne({ _id: admin.id }, { $set: { passwordHash } });
 }

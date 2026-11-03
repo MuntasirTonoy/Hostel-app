@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { calculateMonthlyAccount } from "@/features/accounting/calculate";
+import { summaryMetrics } from "@/features/accounting/report-data";
 import {
   accountToCalcInput,
   createAccountWithValues,
@@ -8,6 +9,7 @@ import {
   deleteDraftAccount,
   getAccountById,
   getCarryForwardMembers,
+  getPreviousPublishedAccount,
   listAccounts,
   publishAccount,
   saveDraft,
@@ -404,5 +406,31 @@ describe("hostel isolation", () => {
       "VALIDATION",
     );
     expect((await getAccountById(other.id, theirAccount.id))!.status).toBe("DRAFT");
+  });
+});
+
+describe("previous-month comparison", () => {
+  const values = (memberId: string, market: string) => ({
+    managerName: "M",
+    members: [{ memberId, name: "", investment: "1000", mealCount: "10" }],
+    expenses: { marketExpense: market, riceExpense: "0", fuelExpense: "100", otherExtraExpense: "0" },
+  });
+
+  it("finds the most recent earlier published month of the same hostel only", async () => {
+    const [a] = await makeMembers("A");
+    await createAccountWithValues(H, { month: 11, year: 2025 }, values(a.id, "100"), { publish: true });
+    const sept = await createAccountWithValues(H, { month: 9, year: 2026 }, values(a.id, "300"), { publish: true });
+    await createAccountWithValues(H, { month: 10, year: 2026 }, values(a.id, "999")); // draft: skipped
+    const other = await makeHostel("অন্য");
+    const [b] = await Promise.all([createMember(other.id, { name: "B" })]);
+    await createAccountWithValues(other.id, { month: 10, year: 2026 }, values(b.id, "5"), { publish: true });
+
+    expect((await getPreviousPublishedAccount(H, 11, 2026))?.id).toBe(sept.id);
+    expect((await getPreviousPublishedAccount(H, 1, 2026))?.month).toBe(11); // across years
+    expect(await getPreviousPublishedAccount(H, 11, 2025)).toBeNull();
+
+    const metrics = summaryMetrics(sept);
+    expect(metrics).toMatchObject({ month: 9, year: 2026, marketExpense: 30000, fuelExpense: 10000, totalMealUnits: 1000 });
+    expect(metrics.totalOutstanding + metrics.totalRefund).toBeGreaterThanOrEqual(0);
   });
 });

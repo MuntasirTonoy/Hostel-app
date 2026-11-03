@@ -12,12 +12,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldError } from "@/components/field-error";
+import { useI18n } from "@/i18n/client";
 import { hostelSettingsSchema } from "@/schemas/auth";
 import { updateHostelAction } from "./actions";
 
 export function SettingsForms({ hostelName }: { hostelName: string }) {
   const router = useRouter();
   const [saving, startSaving] = useTransition();
+  const { t } = useI18n();
+  const h = t.profile.hostel;
   const form = useForm<z.infer<typeof hostelSettingsSchema>>({
     resolver: zodResolver(hostelSettingsSchema),
     defaultValues: { name: hostelName },
@@ -27,7 +30,7 @@ export function SettingsForms({ hostelName }: { hostelName: string }) {
     startSaving(async () => {
       const result = await updateHostelAction(values);
       if (!result.ok) return void toast.error(result.error);
-      toast.success("হোস্টেলের নাম সংরক্ষণ করা হয়েছে।");
+      toast.success(h.saved);
       router.refresh();
     }),
   );
@@ -35,18 +38,18 @@ export function SettingsForms({ hostelName }: { hostelName: string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>হোস্টেলের তথ্য</CardTitle>
-        <CardDescription>হোস্টেলের নাম মাসিক হিসাব ও প্রিন্টে দেখানো হবে।</CardDescription>
+        <CardTitle>{h.title}</CardTitle>
+        <CardDescription>{h.description}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={save} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="hostelName">হোস্টেলের নাম</Label>
-            <Input id="hostelName" placeholder="যেমন: শাপলা ছাত্রাবাস" {...form.register("name")} />
+            <Label htmlFor="hostelName">{h.name}</Label>
+            <Input id="hostelName" placeholder={h.placeholder} {...form.register("name")} />
             <FieldError message={form.formState.errors.name?.message} />
           </div>
           <Button type="submit" disabled={saving}>
-            {saving ? <Loader2 className="animate-spin" /> : <Save />} সংরক্ষণ করুন
+            {saving ? <Loader2 className="animate-spin" /> : <Save />} {t.common.save}
           </Button>
         </form>
       </CardContent>

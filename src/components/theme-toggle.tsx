@@ -3,6 +3,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 
 /**
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils";
  */
 export function ThemeToggle({ className }: { className?: string }) {
   const { resolvedTheme, setTheme } = useTheme();
+  const { t } = useI18n();
   return (
     <Button
       type="button"
@@ -18,8 +20,8 @@ export function ThemeToggle({ className }: { className?: string }) {
       size="icon"
       className={cn("no-print", className)}
       onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-      aria-label="থিম পরিবর্তন করুন"
-      title="থিম পরিবর্তন করুন"
+      aria-label={t.common.changeTheme}
+      title={t.common.changeTheme}
     >
       <Sun className="dark:hidden" />
       <Moon className="hidden dark:block" />

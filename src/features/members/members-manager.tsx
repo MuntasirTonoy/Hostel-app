@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmAction } from "@/features/accounting/confirm-button";
 import { FieldError } from "@/components/field-error";
-import { toBanglaDigits } from "@/lib/money";
+import { useI18n } from "@/i18n/client";
 import { createMemberSchema, memberNameSchema, type CreateMemberInput } from "@/schemas/member";
 import type { MemberDTO } from "@/types/accounting";
 import { createMemberAction, deleteMemberAction, updateMemberAction } from "./actions";
@@ -21,6 +21,8 @@ export function MembersManager({ initialMembers }: { initialMembers: MemberDTO[]
   const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const { t, f, tm } = useI18n();
+  const M = t.members;
 
   const form = useForm<CreateMemberInput>({
     resolver: zodResolver(createMemberSchema),
@@ -35,7 +37,7 @@ export function MembersManager({ initialMembers }: { initialMembers: MemberDTO[]
       if (!result.ok) return void toast.error(result.error);
       setMembers((prev) => [result.data, ...prev]);
       form.reset();
-      toast.success("নতুন সদস্য যুক্ত হয়েছে।");
+      toast.success(M.added);
     }),
   );
 
@@ -54,12 +56,8 @@ export function MembersManager({ initialMembers }: { initialMembers: MemberDTO[]
   function saveName() {
     if (!editing) return;
     const parsed = memberNameSchema.safeParse(editing.name);
-    if (!parsed.success) return void toast.error(parsed.error.issues[0].message);
-    update(
-      editing.id,
-      { name: parsed.data },
-      "নাম হালনাগাদ হয়েছে। পূর্ববর্তী হিসাবের নাম অপরিবর্তিত থাকবে।",
-    );
+    if (!parsed.success) return void toast.error(tm(parsed.error.issues[0].message));
+    update(editing.id, { name: parsed.data }, M.nameUpdated);
   }
 
   function remove(id: string) {
@@ -69,7 +67,7 @@ export function MembersManager({ initialMembers }: { initialMembers: MemberDTO[]
       setBusyId(null);
       if (!result.ok) return void toast.error(result.error);
       setMembers((prev) => prev.filter((p) => p.id !== id));
-      toast.success("সদস্য মুছে ফেলা হয়েছে।");
+      toast.success(M.deleted);
     });
   }
 
@@ -79,19 +77,17 @@ export function MembersManager({ initialMembers }: { initialMembers: MemberDTO[]
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>নতুন সদস্য যুক্ত করুন</CardTitle>
-          <CardDescription>
-            স্থায়ী সদস্য তালিকায় যুক্ত হবে এবং পরবর্তী মাসের হিসাবে নির্বাচন করা যাবে।
-          </CardDescription>
+          <CardTitle>{M.addTitle}</CardTitle>
+          <CardDescription>{M.addDescription}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onCreate} className="flex flex-col gap-2 sm:flex-row sm:items-start">
             <div className="flex-1 space-y-1">
-              <Input placeholder="সদস্যের নাম" aria-label="সদস্যের নাম" {...form.register("name")} />
+              <Input placeholder={M.namePlaceholder} aria-label={M.namePlaceholder} {...form.register("name")} />
               <FieldError message={form.formState.errors.name?.message} />
             </div>
             <Button type="submit" disabled={pending}>
-              <UserPlus /> সদস্য যুক্ত করুন
+              <UserPlus /> {M.add}
             </Button>
           </form>
         </CardContent>
@@ -99,16 +95,12 @@ export function MembersManager({ initialMembers }: { initialMembers: MemberDTO[]
 
       <Card>
         <CardHeader>
-          <CardTitle>স্থায়ী সদস্য তালিকা</CardTitle>
-          <CardDescription>
-            মোট {toBanglaDigits(members.length)} জন, সক্রিয় {toBanglaDigits(activeCount)} জন। হোস্টেল ছেড়ে
-            গেলে সদস্যকে নিষ্ক্রিয় করুন — তিনি পরবর্তী মাসে স্বয়ংক্রিয়ভাবে যুক্ত হবেন না, কিন্তু আগের হিসাব
-            অক্ষত থাকবে।
-          </CardDescription>
+          <CardTitle>{M.listTitle}</CardTitle>
+          <CardDescription>{M.listDescription(f.num(members.length), f.num(activeCount))}</CardDescription>
         </CardHeader>
         <CardContent>
           {members.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">এখনো কোনো সদস্য যুক্ত করা হয়নি।</p>
+            <p className="py-8 text-center text-muted-foreground">{M.empty}</p>
           ) : (
             <ul className="divide-y rounded-lg border">
               {members.map((m) => (
@@ -123,12 +115,12 @@ export function MembersManager({ initialMembers }: { initialMembers: MemberDTO[]
                           if (e.key === "Enter") saveName();
                           if (e.key === "Escape") setEditing(null);
                         }}
-                        aria-label="নতুন নাম"
+                        aria-label={M.newName}
                       />
-                      <Button size="icon" variant="ghost" onClick={saveName} aria-label="সংরক্ষণ">
+                      <Button size="icon" variant="ghost" onClick={saveName} aria-label={t.common.saveShort}>
                         <Check />
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => setEditing(null)} aria-label="বাতিল">
+                      <Button size="icon" variant="ghost" onClick={() => setEditing(null)} aria-label={t.common.cancel}>
                         <X />
                       </Button>
                     </div>
@@ -141,10 +133,10 @@ export function MembersManager({ initialMembers }: { initialMembers: MemberDTO[]
                       </span>
                       {m.isActive ? (
                         <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300">
-                          সক্রিয়
+                          {M.active}
                         </Badge>
                       ) : (
-                        <Badge variant="secondary">নিষ্ক্রিয়</Badge>
+                        <Badge variant="secondary">{M.inactive}</Badge>
                       )}
                     </div>
                   )}
@@ -154,7 +146,7 @@ export function MembersManager({ initialMembers }: { initialMembers: MemberDTO[]
                       size="icon"
                       variant="ghost"
                       onClick={() => setEditing({ id: m.id, name: m.name })}
-                      aria-label={`${m.name} এর নাম সম্পাদনা`}
+                      aria-label={M.editName(m.name)}
                     >
                       <Pencil />
                     </Button>
@@ -162,32 +154,32 @@ export function MembersManager({ initialMembers }: { initialMembers: MemberDTO[]
                       size="sm"
                       variant="outline"
                       className="max-sm:size-8 max-sm:px-0"
-                      aria-label={m.isActive ? `${m.name} কে নিষ্ক্রিয় করুন` : `${m.name} কে সক্রিয় করুন`}
-                      title={m.isActive ? "নিষ্ক্রিয় করুন" : "সক্রিয় করুন"}
+                      aria-label={m.isActive ? M.deactivateLabel(m.name) : M.activateLabel(m.name)}
+                      title={m.isActive ? M.deactivate : M.activate}
                       disabled={busyId === m.id}
                       onClick={() =>
                         update(
                           m.id,
                           { isActive: !m.isActive },
-                          m.isActive ? "সদস্য নিষ্ক্রিয় করা হয়েছে।" : "সদস্য সক্রিয় করা হয়েছে।",
+                          m.isActive ? M.deactivated : M.activated,
                         )
                       }
                     >
                       {m.isActive ? <Ban className="sm:hidden" /> : <CircleCheck className="sm:hidden" />}
-                      <span className="max-sm:hidden">{m.isActive ? "নিষ্ক্রিয় করুন" : "সক্রিয় করুন"}</span>
+                      <span className="max-sm:hidden">{m.isActive ? M.deactivate : M.activate}</span>
                     </Button>
                     <ConfirmAction
                       destructive
-                      title={`"${m.name}" কে মুছে ফেলবেন?`}
-                      description="শুধু যে সদস্যের কোনো মাসিক হিসাবের ইতিহাস নেই তাকেই মুছে ফেলা যায়। ইতিহাস থাকলে নিষ্ক্রিয় করুন।"
-                      confirmLabel="মুছে ফেলুন"
+                      title={M.deleteTitle(m.name)}
+                      description={M.deleteDescription}
+                      confirmLabel={t.common.delete}
                       onConfirm={() => remove(m.id)}
                       trigger={
                         <Button
                           size="icon"
                           variant="ghost"
                           className="text-muted-foreground hover:text-red-600"
-                          aria-label={`${m.name} কে মুছুন`}
+                          aria-label={M.deleteLabel(m.name)}
                         >
                           <Trash2 />
                         </Button>

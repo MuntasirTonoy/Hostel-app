@@ -15,15 +15,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { logoutAction } from "@/features/auth/actions";
+import { useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/admin", label: "ড্যাশবোর্ড", icon: LayoutDashboard },
-  { href: "/admin/accounts/new", label: "নতুন মাসের হিসাব", icon: FilePlus2 },
-  { href: "/admin/accounts", label: "মাসিক হিসাবসমূহ", icon: Files },
-  { href: "/admin/members", label: "সদস্য ব্যবস্থাপনা", icon: UsersRound },
-  { href: "/admin/profile", label: "প্রোফাইল", icon: UserRound },
-];
+  { href: "/admin", key: "dashboard", icon: LayoutDashboard },
+  { href: "/admin/accounts/new", key: "newMonth", icon: FilePlus2 },
+  { href: "/admin/accounts", key: "accounts", icon: Files },
+  { href: "/admin/members", key: "members", icon: UsersRound },
+  { href: "/admin/profile", key: "profile", icon: UserRound },
+] as const;
 
 function isActive(pathname: string, href: string) {
   if (href === "/admin" || href === "/admin/accounts/new") return pathname === href;
@@ -35,9 +36,10 @@ export type SidebarUser = { name: string; hostelName: string };
 
 function NavLinks({ user, onNavigate }: { user: SidebarUser; onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { t } = useI18n();
   return (
     <nav className="flex flex-1 flex-col gap-1">
-      {NAV.map(({ href, label, icon: Icon }) => {
+      {NAV.map(({ href, key, icon: Icon }) => {
         const active = isActive(pathname, href);
         return (
           <Link
@@ -51,7 +53,7 @@ function NavLinks({ user, onNavigate }: { user: SidebarUser; onNavigate?: () => 
             )}
           >
             <Icon className="size-4" />
-            {label}
+            {t.nav[key]}
           </Link>
         );
       })}
@@ -75,7 +77,7 @@ function NavLinks({ user, onNavigate }: { user: SidebarUser; onNavigate?: () => 
             variant="ghost"
             className="w-full justify-start gap-3 px-3 text-red-600 hover:text-red-700"
           >
-            <LogOut className="size-4" /> লগআউট
+            <LogOut className="size-4" /> {t.nav.logout}
           </Button>
         </form>
       </div>
@@ -95,16 +97,17 @@ export function AdminSidebar({ user }: { user: SidebarUser }) {
 /** Mobile menu button (placed inside the SiteHeader) that opens the sidebar links. */
 export function AdminMobileMenu({ user }: { user: SidebarUser }) {
   const [open, setOpen] = useState(false);
+  const { t } = useI18n();
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="lg:hidden" aria-label="মেনু খুলুন">
+        <Button variant="outline" size="icon" className="lg:hidden" aria-label={t.nav.openMenu}>
           <Menu />
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="flex w-72 flex-col gap-4 p-4">
         <SheetHeader className="p-0">
-          <SheetTitle>মেনু</SheetTitle>
+          <SheetTitle>{t.nav.menu}</SheetTitle>
         </SheetHeader>
         <NavLinks user={user} onNavigate={() => setOpen(false)} />
       </SheetContent>

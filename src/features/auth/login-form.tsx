@@ -8,11 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useI18n } from "@/i18n/client";
 import { APP_NAME } from "@/lib/site";
 import { loginAction, type LoginState } from "./actions";
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(loginAction, {});
+  const { t } = useI18n();
+  const a = t.auth;
 
   return (
     <Card className="w-full max-w-sm">
@@ -20,8 +23,8 @@ export function LoginForm() {
         <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Calculator />
         </div>
-        <CardTitle className="text-xl">Admin লগইন</CardTitle>
-        <CardDescription>{APP_NAME} ড্যাশবোর্ডে প্রবেশ করুন</CardDescription>
+        <CardTitle className="text-xl">{a.loginTitle}</CardTitle>
+        <CardDescription>{a.loginDescription(APP_NAME)}</CardDescription>
       </CardHeader>
       <CardContent>
         <form action={formAction} className="space-y-4">
@@ -31,11 +34,11 @@ export function LoginForm() {
             </Alert>
           ) : null}
           <div className="space-y-2">
-            <Label htmlFor="email">ইমেইল</Label>
+            <Label htmlFor="email">{a.email}</Label>
             <Input id="email" name="email" type="email" autoComplete="email" required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">পাসওয়ার্ড</Label>
+            <Label htmlFor="password">{a.password}</Label>
             <Input
               id="password"
               name="password"
@@ -45,12 +48,12 @@ export function LoginForm() {
             />
           </div>
           <Button type="submit" className="w-full" size="lg" disabled={pending}>
-            {pending ? <Loader2 className="animate-spin" /> : <LogIn />} লগইন করুন
+            {pending ? <Loader2 className="animate-spin" /> : <LogIn />} {a.loginSubmit}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
-            অ্যাকাউন্ট নেই?{" "}
+            {a.noAccount}{" "}
             <Link href="/register" className="font-medium text-primary underline underline-offset-4">
-              রেজিস্টার করুন
+              {a.registerLink}
             </Link>
           </p>
         </form>

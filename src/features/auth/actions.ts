@@ -2,6 +2,7 @@
 
 import { AuthError } from "next-auth";
 import { revalidatePath } from "next/cache";
+import { getI18n } from "@/i18n/server";
 import { runAction, type ActionResult } from "@/lib/action-result";
 import { signIn, signOut } from "@/lib/auth";
 import { requireAdmin } from "@/lib/authz";
@@ -13,7 +14,12 @@ import {
   updateProfile,
   type ProfileDTO,
 } from "@/services/admin-service";
-import { updateHostel, type HostelDTO } from "@/services/hostel-service";
+import {
+  isHostelIdAvailable,
+  updateHostel,
+  updateHostelId,
+  type HostelDTO,
+} from "@/services/hostel-service";
 
 export interface FormState {
   error?: string;
@@ -25,11 +31,9 @@ async function signInAndRedirect(email: string, password: string): Promise<FormS
     await signIn("credentials", { email, password, redirectTo: "/admin" });
   } catch (error) {
     if (error instanceof AuthError) {
+      const { t } = await getI18n();
       return {
-        error:
-          error.type === "CredentialsSignin"
-            ? "ইমেইল বা পাসওয়ার্ড সঠিক নয়।"
-            : "লগইন করা যায়নি। কিছুক্ষণ পর আবার চেষ্টা করুন।",
+        error: error.type === "CredentialsSignin" ? t.auth.invalidCredentials : t.auth.loginFailed,
       };
     }
     // signIn throws a redirect on success; let Next.js handle it.
@@ -43,7 +47,10 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
     email: formData.get("email"),
     password: formData.get("password"),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+  if (!parsed.success) {
+    const { tm } = await getI18n();
+    return { error: tm(parsed.error.issues[0]?.message) };
+  }
   return signInAndRedirect(parsed.data.email, parsed.data.password);
 }
 
@@ -77,7 +84,6 @@ export async function updateHostelAction(values: unknown): Promise<ActionResult<
   });
 }
 
-
 export async function updateProfileAction(values: unknown): Promise<ActionResult<ProfileDTO>> {
   return runAction(async () => {
     const { userId } = await requireAdmin();
@@ -94,5 +100,25 @@ export async function checkEmailAvailableAction(
   return runAction(async () => {
     const { userId } = await requireAdmin();
     return { available: await isEmailAvailable(userId, email) };
+  });
+}
+
+/** Live check used by the Hostel ID form before saving. */
+export async function checkHostelIdAvailableAction(
+  code: string,
+): Promise<ActionResult<{ available: boolean }>> {
+  return runAction(async () => {
+    const { hostel } = await requireAdmin();
+    return { available: await isHostelIdAvailable(hostel.id, code) };
+  });
+}
+
+/** Changes the public Hostel ID. The old /monthly-bill/<id> link stops working. */
+export async function updateHostelIdAction(values: unknown): Promise<ActionResult<HostelDTO>> {
+  return runAction(async () => {
+    const { hostel } = await requireAdmin();
+    const updated = await updateHostelId(hostel.id, values);
+    revalidatePath("/", "layout");
+    return updated;
   });
 }

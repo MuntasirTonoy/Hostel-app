@@ -3,13 +3,10 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { cn } from "cn";
+import { useI18n } from "@/i18n/client";
 
-const LINES = [
-  { before: "মাস শেষে ", mark: "খাতা-কলম আর ক্যালকুলেটর", after: " নিয়ে বসার দিন শেষ।" },
-  { before: "জমা, মিল আর বাজারের খরচ লিখলেই ", mark: "মিল রেট তৈরি", after: "।" },
-  { before: "কার কত বকেয়া, কে কত ফেরত পাবে — ", mark: "পয়সা পর্যন্ত নির্ভুল", after: "।" },
-  { before: "একটা লিংক শেয়ার করুন, ", mark: "সবাই মোবাইলেই হিসাব", after: " দেখে নেবে।" },
-];
+// Number of lines (the text comes from the dictionary).
+const LINE_COUNT = 4;
 
 // How far the section has scrolled into view (0–1) when the picture reveal starts and ends.
 const REVEAL_START = 0.1;
@@ -31,6 +28,8 @@ const prefersReducedMotion = () => window.matchMedia(REDUCED_MOTION).matches;
  */
 export function ScrollPortrait() {
   const sectionRef = useRef<HTMLElement>(null);
+  const { t } = useI18n();
+  const lines = t.scrollPortrait.lines;
   const [active, setActive] = useState(-1);
   const [titleShown, setTitleShown] = useState(false);
   const reduced = useSyncExternalStore(subscribeReducedMotion, prefersReducedMotion, () => false);
@@ -54,7 +53,7 @@ export function ScrollPortrait() {
       // The picture starts centred and slides aside just before the lines begin.
       section.style.setProperty("--shift", String(1 - clamp((entry - REVEAL_END) / (1 - REVEAL_END))));
       setTitleShown(reveal >= 0.4);
-      setActive(entry < 0.95 ? -1 : Math.min(LINES.length - 1, Math.floor(pinned * LINES.length)));
+      setActive(entry < 0.95 ? -1 : Math.min(LINE_COUNT - 1, Math.floor(pinned * LINE_COUNT)));
     };
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(update);
@@ -89,7 +88,7 @@ export function ScrollPortrait() {
           />
           <Image
             src="/images/manager.webp"
-            alt="হোস্টেলের মেস ম্যানেজার"
+            alt={t.scrollPortrait.alt}
             width={900}
             height={982}
             sizes="(min-width: 1024px) 28rem, (min-width: 640px) 24rem, 20rem"
@@ -109,14 +108,14 @@ export function ScrollPortrait() {
               !reduced && !titleShown && "translate-y-4 opacity-0",
             )}
           >
-            মেস ম্যানেজারের কাজ এখন সহজ
+            {t.scrollPortrait.title}
           </p>
-          {LINES.map((line, i) => {
+          {lines.map((line, i) => {
             const shown = reduced || i <= active;
             const current = reduced || i === active;
             return (
               <p
-                key={line.mark}
+                key={i}
                 className={cn(
                   "text-lg leading-snug font-bold transition-all duration-500 ease-out sm:text-3xl",
                   !shown && "translate-y-6 opacity-0",

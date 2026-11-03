@@ -13,43 +13,15 @@ import { HeroPreview } from "@/components/hero-preview";
 import { Reveal } from "@/components/reveal";
 import { ScrollPortrait } from "@/components/scroll-portrait";
 import { Button } from "@/components/ui/button";
+import { getI18n } from "@/i18n/server";
 import { getAdminSession } from "@/lib/authz";
 
-const FEATURES = [
-  {
-    icon: Calculator,
-    title: "স্বয়ংক্রিয় হিসাব",
-    text: "মিল রেট, জনপ্রতি অতিরিক্ত খরচ, বকেয়া ও ফেরত — সব নিজে থেকেই হিসাব হয়।",
-  },
-  {
-    icon: UsersRound,
-    title: "সদস্য স্বয়ংক্রিয়ভাবে যুক্ত",
-    text: "নতুন মাসে আগের মাসের সদস্য তালিকা নিজে থেকেই চলে আসে।",
-  },
-  {
-    icon: Wallet,
-    title: "পয়সা পর্যন্ত নির্ভুল",
-    text: "প্রতিটি হিসাব পয়সা পর্যন্ত মিলিয়ে দেখা হয় — মোট খরচ সবসময় মিলে যায়।",
-  },
-  {
-    icon: FileText,
-    title: "সবার জন্য উন্মুক্ত রিপোর্ট",
-    text: "প্রতিটি হোস্টেলের নিজস্ব লিংক — প্রকাশিত হিসাব লগইন ছাড়াই যে কেউ মোবাইলে দেখতে পারে।",
-  },
-  {
-    icon: Printer,
-    title: "প্রিন্ট ও PDF",
-    text: "এক ক্লিকে হিসাব প্রিন্ট করুন বা PDF ডাউনলোড করে গ্রুপে শেয়ার করুন।",
-  },
-  {
-    icon: ShieldCheck,
-    title: "নিরাপদ ব্যবস্থাপনা",
-    text: "প্রতিটি হোস্টেলের তথ্য আলাদা — শুধু সেই হোস্টেলের Admin হিসাব তৈরি, সম্পাদনা ও প্রকাশ করতে পারেন।",
-  },
-];
+const FEATURE_ICONS = [Calculator, UsersRound, Wallet, FileText, Printer, ShieldCheck];
 
 export default async function LandingPage() {
   const loggedIn = (await getAdminSession()) !== null;
+  const { t } = await getI18n();
+  const features = t.landing.features.map((feature, i) => ({ ...feature, icon: FEATURE_ICONS[i] }));
   return (
     <main className="flex-1">
       <section className="relative overflow-hidden border-b bg-linear-to-b from-primary/10 to-background lg:h-screen">
@@ -74,18 +46,17 @@ export default async function LandingPage() {
                   <span className="absolute inline-flex size-full rounded-full bg-primary opacity-75 motion-safe:animate-ping" />
                   <span className="relative inline-flex size-2 rounded-full bg-primary" />
                 </span>
-                মিলের হিসাব এক নিমেষেই
+                {t.landing.badge}
               </span>
             </Reveal>
             <Reveal>
               <h1 className="text-[1.75rem] font-bold leading-tight sm:text-5xl">
-                মিলের হিসাব এখন <br/> <span className="text-primary">সহজ, স্বচ্ছ ও নির্ভুল</span>
+                {t.landing.titleLead} <br /> <span className="text-primary">{t.landing.titleHighlight}</span>
               </h1>
             </Reveal>
             <Reveal delay={150}>
               <p className="max-w-2xl text-base text-muted-foreground sm:text-lg">
-                জমা, মিল সংখ্যা, বাজার ও অতিরিক্ত খরচ লিখুন — বাকি সব হিসাব হবে স্বয়ংক্রিয়ভাবে। প্রতি
-                মাসের চূড়ান্ত হিসাব সবাই এক জায়গায় দেখতে পারবে।
+                {t.landing.intro}
               </p>
             </Reveal>
             <Reveal
@@ -95,21 +66,21 @@ export default async function LandingPage() {
               <Button asChild size="lg">
                 {loggedIn ? (
                   <Link href="/admin">
-                    ড্যাশবোর্ডে যান <ArrowRight />
+                    {t.landing.goToDashboard} <ArrowRight />
                   </Link>
                 ) : (
                   <Link href="/register">
-                    বিনামূল্যে শুরু করুন <ArrowRight />
+                    {t.landing.startFree} <ArrowRight />
                   </Link>
                 )}
               </Button>
               <Button asChild size="lg" variant="outline">
-                <Link href="/monthly-bill">হোস্টেলের হিসাব দেখুন</Link>
+                <Link href="/monthly-bill">{t.landing.viewBill}</Link>
               </Button>
             </Reveal>
             <Reveal delay={450}>
               <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground lg:justify-start">
-                {["বিনামূল্যে", "লগইন ছাড়াই রিপোর্ট দেখা", "প্রিন্ট ও PDF"].map((item) => (
+                {t.landing.checks.map((item) => (
                   <li key={item} className="flex items-center gap-1.5">
                     <CheckCircle2 className="size-4 text-primary" /> {item}
                   </li>
@@ -127,10 +98,10 @@ export default async function LandingPage() {
 
       <section className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
         <Reveal>
-          <h2 className="mb-6 text-center text-xl font-bold sm:mb-8 sm:text-2xl">যা যা করা যায়</h2>
+          <h2 className="mb-6 text-center text-xl font-bold sm:mb-8 sm:text-2xl">{t.landing.featuresTitle}</h2>
         </Reveal>
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-          {FEATURES.map(({ icon: Icon, title, text }, i) => (
+          {features.map(({ icon: Icon, title, text }, i) => (
             <Reveal key={title} delay={(i % 3) * 120} className="h-full">
               <div className="h-full rounded-xl border bg-card p-3 transition-shadow hover:shadow-md sm:p-5">
                 <span className="mb-2 flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary sm:mb-3 sm:size-10">

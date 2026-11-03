@@ -12,7 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { periodLabel, periodSlug } from "@/lib/months";
+import { useI18n } from "@/i18n/client";
+import { periodSlug } from "@/lib/months";
 import type { PeriodRef } from "@/types/accounting";
 
 export function ReportActions({
@@ -29,6 +30,7 @@ export function ReportActions({
   current: { month: number; year: number };
 }) {
   const router = useRouter();
+  const { t, f } = useI18n();
   const [downloading, setDownloading] = useState(false);
 
   async function downloadPdf() {
@@ -91,7 +93,7 @@ export function ReportActions({
       pdf.save(`${fileName}.pdf`);
     } catch (error) {
       console.error(error);
-      toast.error("PDF তৈরি করা যায়নি। পরিবর্তে \"প্রিন্ট করুন\" থেকে PDF হিসেবে সংরক্ষণ করুন।");
+      toast.error(t.publicReport.pdfFailed);
     } finally {
       setDownloading(false);
     }
@@ -100,24 +102,24 @@ export function ReportActions({
   return (
     <div className="no-print flex flex-wrap items-center justify-center gap-2">
       <Button variant="outline" onClick={() => window.print()}>
-        <Printer /> প্রিন্ট করুন
+        <Printer /> {t.publicReport.print}
       </Button>
       <Button variant="outline" onClick={downloadPdf} disabled={downloading}>
-        {downloading ? <Loader2 className="animate-spin" /> : <Download />} PDF ডাউনলোড
+        {downloading ? <Loader2 className="animate-spin" /> : <Download />} {t.publicReport.downloadPdf}
       </Button>
       {periods.length > 0 ? (
         <Select
           value={periodSlug(current.month, current.year)}
           onValueChange={(slug) => router.push(`${basePath}/${slug}`)}
         >
-          <SelectTrigger className="min-w-52" aria-label="পূর্ববর্তী মাসের হিসাব">
+          <SelectTrigger className="min-w-52" aria-label={t.publicReport.previous}>
             <History />
-            <SelectValue placeholder="পূর্ববর্তী মাসের হিসাব" />
+            <SelectValue placeholder={t.publicReport.previous} />
           </SelectTrigger>
           <SelectContent>
             {periods.map((p) => (
               <SelectItem key={p.id} value={periodSlug(p.month, p.year)}>
-                {periodLabel(p.month, p.year)}
+                {f.period(p.month, p.year)}
               </SelectItem>
             ))}
           </SelectContent>

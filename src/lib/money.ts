@@ -14,6 +14,14 @@ export function toBanglaDigits(input: string | number): string {
   return String(input).replace(/[0-9]/g, (d) => BANGLA_DIGITS[Number(d)]);
 }
 
+/** UI language for number formatting: Bangla digits + lakh grouping, or ASCII digits + thousands grouping. */
+export type NumberLocale = "bn" | "en";
+
+/** Bangla digits for "bn"; unchanged ASCII digits for "en". */
+export function localizeDigits(input: string | number, locale: NumberLocale = "bn"): string {
+  return locale === "bn" ? toBanglaDigits(input) : String(input);
+}
+
 /** Converts Bangla digits in a string to ASCII digits (so users may type either). */
 export function toAsciiDigits(input: string): string {
   return input.replace(/[০-৯]/g, (d) => String(BANGLA_DIGITS.indexOf(d)));
@@ -75,28 +83,33 @@ function groupBangladeshi(whole: string): string {
   return `${rest},${last3}`;
 }
 
-/** Formats paisa as Bangla currency text, e.g. 500000 -> "৫,০০০.০০". */
-export function formatAmount(paisa: number): string {
+/** Groups an integer string: lakh/crore for Bangla, thousands (1,234,567) for English. */
+function groupDigits(whole: string, locale: NumberLocale): string {
+  return locale === "bn" ? groupBangladeshi(whole) : whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+/** Formats paisa as currency text, e.g. 500000 -> "৫,০০০.০০" (bn) or "5,000.00" (en). */
+export function formatAmount(paisa: number, locale: NumberLocale = "bn"): string {
   const negative = paisa < 0;
   const abs = Math.abs(paisa);
-  const whole = groupBangladeshi(String(Math.floor(abs / 100)));
+  const whole = groupDigits(String(Math.floor(abs / 100)), locale);
   const frac = String(abs % 100).padStart(2, "0");
-  return `${negative ? "-" : ""}${toBanglaDigits(`${whole}.${frac}`)}`;
+  return `${negative ? "-" : ""}${localizeDigits(`${whole}.${frac}`, locale)}`;
 }
 
 /** Formats paisa with the taka sign, e.g. 500000 -> "৳৫,০০০.০০". */
-export function formatTaka(paisa: number): string {
-  const s = formatAmount(paisa);
+export function formatTaka(paisa: number, locale: NumberLocale = "bn"): string {
+  const s = formatAmount(paisa, locale);
   return s.startsWith("-") ? `-৳${s.slice(1)}` : `৳${s}`;
 }
 
 /** Formats a meal count stored in hundredths, e.g. 4550 -> "৪৫.৫", 4500 -> "৪৫". */
-export function formatMealUnits(units: number): string {
-  const whole = groupBangladeshi(String(Math.floor(units / 100)));
+export function formatMealUnits(units: number, locale: NumberLocale = "bn"): string {
+  const whole = groupDigits(String(Math.floor(units / 100)), locale);
   const frac = units % 100;
-  if (frac === 0) return toBanglaDigits(whole);
+  if (frac === 0) return localizeDigits(whole, locale);
   const fracStr = String(frac).padStart(2, "0").replace(/0$/, "");
-  return toBanglaDigits(`${whole}.${fracStr}`);
+  return localizeDigits(`${whole}.${fracStr}`, locale);
 }
 
 /** Converts a stored meal count (e.g. 45.5) into integer hundredths. */

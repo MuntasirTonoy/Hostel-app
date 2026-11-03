@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/features/auth/login-form";
+import { getI18n } from "@/i18n/server";
 import { getAdminSession } from "@/lib/authz";
 
-export const metadata: Metadata = { title: "Admin লগইন" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t.auth.loginTitle };
+}
 
 export default async function LoginPage() {
   if (await getAdminSession()) redirect("/admin");

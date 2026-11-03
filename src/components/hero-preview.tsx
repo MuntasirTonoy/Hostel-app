@@ -3,21 +3,23 @@
 import { CheckCircle2, FileDown, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "cn";
-import { formatMealUnits, formatTaka } from "@/lib/money";
+import { useI18n } from "@/i18n/client";
 
 // Sample figures only (paisa / meal hundredths).
 const MEAL_RATE = 5850;
 const ROWS = [
-  { name: "রাকিব", meals: 6200, balance: 22300 },
-  { name: "তনয়", meals: 5800, balance: -54300 },
-  { name: "রনক", meals: 4550, balance: 18825 },
-  { name: "খোকন", meals: 7000, balance: 25500 },
+  { meals: 6200, balance: 22300 },
+  { meals: 5800, balance: -54300 },
+  { meals: 4550, balance: 18825 },
+  { meals: 7000, balance: 25500 },
 ];
 const COUNT_MS = 1400;
 
 /** Decorative, animated mock of a monthly report for the landing hero. */
 export function HeroPreview() {
   const [rate, setRate] = useState(0);
+  const { t, f } = useI18n();
+  const p = t.heroPreview;
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -41,27 +43,29 @@ export function HeroPreview() {
       <div className="relative rounded-2xl border bg-card/90 p-4 shadow-xl backdrop-blur sm:p-5 motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:duration-700">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs text-muted-foreground">অক্টোবর ২০২৬ · প্রকাশিত</p>
-            <p className="font-semibold">মাসিক মিলের হিসাব</p>
+            <p className="text-xs text-muted-foreground">
+              {f.period(10, 2026)} · {t.common.published}
+            </p>
+            <p className="font-semibold">{p.title}</p>
           </div>
           <div className="rounded-xl bg-primary px-3 py-1.5 text-right text-primary-foreground">
-            <p className="text-[10px] leading-none opacity-80">মিল রেট</p>
-            <p className="text-lg font-bold tabular-nums leading-tight">{formatTaka(rate)}</p>
+            <p className="text-[10px] leading-none opacity-80">{p.mealRate}</p>
+            <p className="text-lg font-bold tabular-nums leading-tight">{f.taka(rate)}</p>
           </div>
         </div>
 
         <div className="space-y-2">
           {ROWS.map((row, i) => (
             <div
-              key={row.name}
+              key={i}
               className="flex items-center gap-3 rounded-lg border bg-background/60 px-3 py-2 text-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-3 motion-safe:fill-mode-both motion-safe:duration-500"
               style={{ animationDelay: `${500 + i * 150}ms` }}
             >
               <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                {row.name[0]}
+                {p.names[i][0]}
               </span>
-              <span className="min-w-0 flex-1 truncate font-medium">{row.name}</span>
-              <span className="hidden text-xs whitespace-nowrap text-muted-foreground min-[380px]:inline">{formatMealUnits(row.meals)} মিল</span>
+              <span className="min-w-0 flex-1 truncate font-medium">{p.names[i]}</span>
+              <span className="hidden text-xs whitespace-nowrap text-muted-foreground min-[380px]:inline">{p.meals(f.mealUnits(row.meals))}</span>
               <span
                 className={cn(
                   "rounded-md px-2 py-0.5 text-right text-xs font-semibold whitespace-nowrap tabular-nums sm:min-w-28",
@@ -70,8 +74,7 @@ export function HeroPreview() {
                     : "bg-red-500/10 text-red-600 dark:text-red-400",
                 )}
               >
-                {row.balance >= 0 ? "ফেরত " : "বকেয়া "}
-                {formatTaka(Math.abs(row.balance))}
+                {row.balance >= 0 ? p.refund : p.due} {f.taka(Math.abs(row.balance))}
               </span>
             </div>
           ))}
@@ -79,13 +82,13 @@ export function HeroPreview() {
       </div>
 
       <div className="absolute -top-4 -left-3 flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-xs font-medium shadow-lg motion-safe:animate-float sm:-left-8">
-        <CheckCircle2 className="size-4 text-primary" /> হিসাব মিলেছে
+        <CheckCircle2 className="size-4 text-primary" /> {p.balanced}
       </div>
       <div className="absolute -right-2 top-1/2 flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-xs font-medium shadow-lg motion-safe:animate-float [animation-delay:-2s] sm:-right-8">
-        <TrendingUp className="size-4 text-primary" /> স্বয়ংক্রিয় হিসাব
+        <TrendingUp className="size-4 text-primary" /> {p.automatic}
       </div>
       <div className="absolute -bottom-4 left-6 flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-xs font-medium shadow-lg motion-safe:animate-float [animation-delay:-4s]">
-        <FileDown className="size-4 text-primary" /> PDF প্রস্তুত
+        <FileDown className="size-4 text-primary" /> {p.pdfReady}
       </div>
     </div>
   );

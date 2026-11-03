@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldError } from "@/components/field-error";
+import { useI18n } from "@/i18n/client";
 import { updateProfileSchema, type UpdateProfileInput } from "@/schemas/auth";
 import { checkEmailAvailableAction, updateProfileAction } from "./actions";
 
@@ -23,6 +24,8 @@ type EmailStatus = "checking" | "available" | "taken" | "invalid";
 export function ProfileForm({ name, email }: { name: string; email: string }) {
   const router = useRouter();
   const [saving, startSaving] = useTransition();
+  const { t } = useI18n();
+  const p = t.profile.personal;
   const form = useForm<UpdateProfileInput>({
     resolver: zodResolver(updateProfileSchema),
     defaultValues: { name, email, currentPassword: "" },
@@ -63,7 +66,7 @@ export function ProfileForm({ name, email }: { name: string; email: string }) {
   const submit = form.handleSubmit((values) => {
     if (emailChanged && status !== "available") {
       toast.error(
-        status === "taken" ? "এই ইমেইল দিয়ে অন্য একটি অ্যাকাউন্ট আছে।" : "নতুন ইমেইল যাচাই করা হচ্ছে, একটু অপেক্ষা করুন।",
+        status === "taken" ? p.taken : p.wait,
       );
       return;
     }
@@ -72,9 +75,7 @@ export function ProfileForm({ name, email }: { name: string; email: string }) {
       if (!result.ok) return void toast.error(result.error);
       form.reset({ name: result.data.name, email: result.data.email, currentPassword: "" });
       toast.success(
-        emailChanged
-          ? "প্রোফাইল হালনাগাদ হয়েছে। পরেরবার নতুন ইমেইল দিয়ে লগইন করুন।"
-          : "প্রোফাইল হালনাগাদ হয়েছে।",
+        emailChanged ? p.updatedEmail : p.updated,
       );
       router.refresh();
     });
@@ -83,18 +84,18 @@ export function ProfileForm({ name, email }: { name: string; email: string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>ব্যক্তিগত তথ্য</CardTitle>
-        <CardDescription>আপনার নাম ও লগইন ইমেইল।</CardDescription>
+        <CardTitle>{p.title}</CardTitle>
+        <CardDescription>{p.description}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="profile-name">নাম</Label>
+            <Label htmlFor="profile-name">{p.name}</Label>
             <Input id="profile-name" autoComplete="name" {...form.register("name")} />
             <FieldError message={form.formState.errors.name?.message} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="profile-email">ইমেইল</Label>
+            <Label htmlFor="profile-email">{p.email}</Label>
             <Input
               id="profile-email"
               type="email"
@@ -106,24 +107,24 @@ export function ProfileForm({ name, email }: { name: string; email: string }) {
             <p id="profile-email-status" aria-live="polite" className="text-sm">
               {status === "checking" ? (
                 <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <Loader2 className="size-3.5 animate-spin" /> ইমেইল যাচাই করা হচ্ছে…
+                  <Loader2 className="size-3.5 animate-spin" /> {p.checking}
                 </span>
               ) : status === "available" ? (
                 <span className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-                  <CheckCircle2 className="size-3.5" /> এই ইমেইল ব্যবহার করা যাবে।
+                  <CheckCircle2 className="size-3.5" /> {p.available}
                 </span>
               ) : status === "taken" ? (
                 <span className="flex items-center gap-1.5 text-red-600">
-                  <XCircle className="size-3.5" /> এই ইমেইল দিয়ে অন্য একটি অ্যাকাউন্ট আছে।
+                  <XCircle className="size-3.5" /> {p.taken}
                 </span>
               ) : status === "invalid" ? (
-                <span className="text-red-600">সঠিক ইমেইল ঠিকানা লিখুন।</span>
+                <span className="text-red-600">{p.invalid}</span>
               ) : null}
             </p>
           </div>
           {status === "available" ? (
             <div className="space-y-2">
-              <Label htmlFor="profile-password">বর্তমান পাসওয়ার্ড (ইমেইল পরিবর্তনের জন্য)</Label>
+              <Label htmlFor="profile-password">{p.currentPassword}</Label>
               <Input
                 id="profile-password"
                 type="password"
@@ -136,7 +137,7 @@ export function ProfileForm({ name, email }: { name: string; email: string }) {
             type="submit"
             disabled={saving || (emailChanged && status !== "available")}
           >
-            {saving ? <Loader2 className="animate-spin" /> : <Save />} সংরক্ষণ করুন
+            {saving ? <Loader2 className="animate-spin" /> : <Save />} {t.common.save}
           </Button>
         </form>
       </CardContent>

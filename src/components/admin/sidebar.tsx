@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Contact,
   FilePlus2,
   UserRound,
   Files,
@@ -23,6 +24,7 @@ const NAV = [
   { href: "/admin/accounts/new", key: "newMonth", icon: FilePlus2 },
   { href: "/admin/accounts", key: "accounts", icon: Files },
   { href: "/admin/members", key: "members", icon: UsersRound },
+  { href: "/admin/contacts", key: "contacts", icon: Contact },
   { href: "/admin/profile", key: "profile", icon: UserRound },
 ] as const;
 

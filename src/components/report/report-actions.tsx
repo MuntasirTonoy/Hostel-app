@@ -43,8 +43,10 @@ export function ReportActions({
         import("html2canvas-pro"),
         import("jspdf"),
       ]);
+      const scale = 2;
+      let rowBottoms: number[] = [];
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale,
         backgroundColor: "#ffffff",
         windowWidth: 1200,
         onclone: (doc) => {
@@ -52,11 +54,19 @@ export function ReportActions({
           doc.documentElement.classList.remove("dark");
           const clone = doc.getElementById(targetId);
           if (!clone) return;
-          clone.style.width = "1100px";
+          clone.style.width = "800px"; // A4 portrait proportions at a readable text size.
           clone.style.padding = "24px";
           clone.querySelectorAll<HTMLElement>(".print-table-wrap").forEach((el) => {
             el.style.overflow = "visible";
             el.style.display = "block";
+          });
+          // The name column hugs the longest name, and drops the sticky column's solid
+          // background so the row lines and shading run through it.
+          clone.querySelectorAll<HTMLElement>(".print-table-wrap th:first-child").forEach((el) => {
+            el.style.width = "1%";
+            el.style.position = "static";
+            el.style.background = "transparent";
+            el.style.fontWeight = "600";
           });
           // The PDF always uses the table, never the mobile cards.
           clone.querySelectorAll<HTMLElement>(".report-cards").forEach((el) => {
@@ -65,20 +75,31 @@ export function ReportActions({
           clone.querySelectorAll<HTMLElement>(".print-only").forEach((el) => {
             el.style.display = "block";
           });
+          clone.querySelectorAll<HTMLElement>(".print-table-wrap table").forEach((el) => {
+            el.style.minWidth = "0";
+          });
+          // Measured last, once the layout above applies: pages break only between rows.
+          const top = clone.getBoundingClientRect().top;
+          rowBottoms = Array.from(clone.querySelectorAll("tr"), (tr) =>
+            Math.floor((tr.getBoundingClientRect().bottom - top) * scale),
+          );
         },
       });
 
-      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const margin = 8;
       const pageWidth = pdf.internal.pageSize.getWidth() - margin * 2;
       const pageHeight = pdf.internal.pageSize.getHeight() - margin * 2;
       const pxPerMm = canvas.width / pageWidth;
       const sliceHeightPx = Math.floor(pageHeight * pxPerMm);
 
-      for (let y = 0, page = 0; y < canvas.height; y += sliceHeightPx, page++) {
+      for (let y = 0, page = 0, end = 0; y < canvas.height; y = end, page++) {
+        const limit = y + sliceHeightPx;
+        const lastRowOnPage = Math.max(0, ...rowBottoms.filter((b) => b > y && b <= limit));
+        end = limit >= canvas.height ? canvas.height : lastRowOnPage || limit;
         const slice = document.createElement("canvas");
         slice.width = canvas.width;
-        slice.height = Math.min(sliceHeightPx, canvas.height - y);
+        slice.height = end - y;
         slice.getContext("2d")!.drawImage(canvas, 0, -y);
         if (page > 0) pdf.addPage();
         pdf.addImage(

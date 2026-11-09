@@ -21,6 +21,8 @@ type MemberLean = {
   _id: Types.ObjectId;
   name: string;
   isActive: boolean;
+  phone?: string;
+  hiddenFromContacts?: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -30,6 +32,8 @@ function toDTO(doc: MemberLean): MemberDTO {
     id: String(doc._id),
     name: doc.name,
     isActive: doc.isActive,
+    phone: doc.phone ?? "",
+    hiddenFromContacts: doc.hiddenFromContacts ?? false,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
   };
@@ -52,9 +56,9 @@ export async function countActiveMembers(hostelId: string): Promise<number> {
 }
 
 export async function createMember(hostelId: string, input: CreateMemberInput): Promise<MemberDTO> {
-  const { name } = parseOrThrow(createMemberSchema, input);
+  const { name, phone = "" } = parseOrThrow(createMemberSchema, input);
   await connectDB();
-  const doc = await Member.create({ hostelId, name, isActive: true });
+  const doc = await Member.create({ hostelId, name, phone, isActive: true });
   return toDTO(doc.toObject() as MemberLean);
 }
 

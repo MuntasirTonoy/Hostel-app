@@ -45,7 +45,7 @@ export async function PublicReportPage({
   const base = `/monthly-bill/${hostel.code}`;
 
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 space-y-8 px-4 py-6 sm:py-10">
+    <main className="mx-auto w-full max-w-6xl flex-1 space-y-8 px-4 py-6 sm:py-10 print:max-w-none print:space-y-0 print:p-0">
       {toolbar}
       {report ? (
         <>

@@ -2,7 +2,14 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+/* Print is always light, so dark: utilities must not apply to it. */
+@custom-variant dark {
+  @media not print {
+    &:is(.dark *) {
+      @slot;
+    }
+  }
+}
 
 @theme inline {
   --color-background: var(--background);
@@ -156,7 +163,14 @@
   }
   @page {
     size: A4 landscape;
-    margin: 10mm;
+    /* No top/bottom page margin: that is where browsers print the page title, URL and date. */
+    margin: 0 10mm;
+  }
+  /* Restores the vertical margin on every page, inside the page area. */
+  .report-sheet {
+    padding-block: 10mm;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
   }
   html,
   body {
@@ -181,6 +195,37 @@
   }
   .print-table-wrap tr {
     break-inside: avoid;
+  }
+  /* The name column hugs the longest name; the figures get the spare width. */
+  .print-table-wrap th:first-child {
+    width: 1%;
+    position: static;
+    background: transparent;
+    font-weight: 600;
+  }
+  /* Up to PORTRAIT_PRINT_MAX_MEMBERS members: one A4 portrait page (ReportView sets @page). */
+  .print-portrait {
+    break-inside: avoid;
+  }
+  .print-portrait > :not(:last-child) {
+    margin-bottom: 10px;
+  }
+  .print-portrait h1 {
+    font-size: 16pt;
+  }
+  .print-portrait .print-table-wrap table {
+    font-size: 9.5pt;
+  }
+  .print-portrait .print-table-wrap th,
+  .print-portrait .print-table-wrap td {
+    position: static;
+    padding: 5px 4px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .print-portrait .print-table-wrap th:first-child {
+    white-space: nowrap;
+    overflow-wrap: normal;
   }
 }
 .print-only {

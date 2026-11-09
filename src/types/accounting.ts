@@ -104,10 +104,18 @@ export interface MonthlyAccountDTO {
   updatedAt: string;
 }
 
+export interface ContactDTO {
+  id: string;
+  name: string;
+  phone: string;
+}
+
 export interface MemberDTO {
   id: string;
   name: string;
   isActive: boolean;
+  phone: string;
+  hiddenFromContacts: boolean;
   createdAt: string;
   updatedAt: string;
 }

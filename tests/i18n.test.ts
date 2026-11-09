@@ -13,7 +13,7 @@ import {
   registerSchema,
   updateProfileSchema,
 } from "@/schemas/auth";
-import { createMemberSchema } from "@/schemas/member";
+import { createContactSchema, createMemberSchema } from "@/schemas/member";
 import { MESSAGES } from "@/services/errors";
 
 // Bangla letters and digits; the taka sign (U+09F3) is used in both languages.
@@ -84,6 +84,8 @@ describe("message translation", () => {
       ...zodMessages(hostelIdSchema, "bad id"),
       ...zodMessages(createMemberSchema, { name: "" }),
       ...zodMessages(createMemberSchema, { name: "x".repeat(101) }),
+      ...zodMessages(createContactSchema, { name: "A", phone: "" }),
+      ...zodMessages(createContactSchema, { name: "A", phone: "abc" }),
       ...zodMessages(newMonthSchema, { month: 0, year: 1999, managerName: "x".repeat(101), memberIds: [] }),
       ...zodMessages(newMonthSchema, { month: 1, year: 2026, managerName: "", memberIds: ["nope"] }),
       ...zodMessages(accountFormSchema, {

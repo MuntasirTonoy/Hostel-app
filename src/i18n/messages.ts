@@ -23,6 +23,7 @@ const EN: Record<string, string> = {
   [MESSAGES.DUPLICATE_PERIOD]: "A record for this month and year already exists.",
   [MESSAGES.ACCOUNT_NOT_FOUND]: "The record could not be found.",
   [MESSAGES.MEMBER_NOT_FOUND]: "Member not found.",
+  [MESSAGES.CONTACT_NOT_FOUND]: "Contact not found.",
   [MESSAGES.PUBLISHED_LOCKED]:
     'This record is published. To change it, first choose "Unpublish" and confirm.',
   [MESSAGES.MANAGER_REQUIRED]: "Enter the manager's name before publishing.",
@@ -38,6 +39,8 @@ const EN: Record<string, string> = {
   [MESSAGES.EMAIL_CHANGE_PASSWORD]: "Enter your current password correctly to change the email.",
   [MESSAGES.WRONG_CURRENT_PASSWORD]: "The current password is incorrect.",
   [MESSAGES.HOSTEL_ID_TAKEN]: "Another hostel is using this Hostel ID. Choose a different one.",
+  "সঠিক ফোন নম্বর লিখুন।": "Enter a valid phone number.",
+  "ফোন নম্বর লিখুন।": "Enter the phone number.",
 
   // Calculator issues
   [ISSUE_MESSAGES.NO_MEMBERS]: "Add at least one member.",

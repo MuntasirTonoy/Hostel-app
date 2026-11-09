@@ -23,6 +23,9 @@ export type ReportData = Pick<
   | "totalMemberCost"
 >;
 
+/** Reports up to this size print on one A4 portrait page; larger ones stay landscape. */
+const PORTRAIT_PRINT_MAX_MEMBERS = 15;
+
 export function ReportView({
   report,
   hostelName,
@@ -66,8 +69,14 @@ export function ReportView({
   ];
   const previousLabel = previous ? f.period(previous.month, previous.year) : "";
 
+  const printPortrait = report.members.length <= PORTRAIT_PRINT_MAX_MEMBERS;
+  const mealRate = report.mealRate === null ? "—" : t.common.taka(f.amount(report.mealRate));
+  const extraPerMember =
+    report.extraCostPerMember === null ? "—" : t.common.taka(f.amount(report.extraCostPerMember));
+
   return (
-    <article id={id} className="space-y-6 bg-background">
+    <article id={id} className={cn("report-sheet space-y-6 bg-background", printPortrait && "print-portrait")}>
+      {printPortrait ? <style>{"@media print { @page { size: A4 portrait; margin: 0 10mm; } }"}</style> : null}
       <header className="text-center space-y-1">
         {hostelName ? <p className="text-base font-semibold text-primary">{hostelName}</p> : null}
         <h1 className="text-2xl sm:text-3xl font-bold">
@@ -80,11 +89,15 @@ export function ReportView({
 
       {/* Mobile: one card per member. Print and PDF (rendered at 1200px) always use the table. */}
       <div className="report-cards space-y-3 md:hidden print:hidden">
-        <div className="flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
-          <span className="text-sm text-muted-foreground">{r.mealRate}</span>
-          <span className="text-lg font-semibold text-primary tabular-nums">
-            {report.mealRate === null ? "—" : t.common.taka(f.amount(report.mealRate))}
-          </span>
+        <div className="space-y-1 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm text-muted-foreground">{r.mealRate}</span>
+            <span className="text-lg font-semibold text-primary tabular-nums">{mealRate}</span>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm text-muted-foreground">{s.extraPerMember}</span>
+            <span className="text-lg font-semibold text-primary tabular-nums">{extraPerMember}</span>
+          </div>
         </div>
 
         {report.members.length === 0 ? (
@@ -102,7 +115,6 @@ export function ReportView({
                 <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
                   <CardStat label={r.deposit} value={`৳ ${f.amount(m.investment)}`} />
                   <CardStat label={r.mealCount} value={f.meals(m.mealCount)} />
-                  <CardStat label={r.extraCost} value={`৳ ${f.amount(m.extraCost)}`} />
                   <CardStat label={r.totalCost} value={`৳ ${f.amount(m.totalCost)}`} strong />
                 </dl>
               </li>
@@ -115,7 +127,6 @@ export function ReportView({
           <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
             <CardStat label={r.deposit} value={`৳ ${f.amount(report.totalDeposits)}`} />
             <CardStat label={r.mealCount} value={f.meals(report.totalMeals)} />
-            <CardStat label={r.extraCost} value={`৳ ${f.amount(report.totalExtraCost)}`} />
             <CardStat label={r.totalCost} value={`৳ ${f.amount(report.totalMemberCost)}`} strong />
             <CardStat
               label={r.due}
@@ -152,7 +163,7 @@ export function ReportView({
           <tbody>
             {report.members.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
+                <td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">
                   {r.noMembers}
                 </td>
               </tr>
@@ -169,7 +180,6 @@ export function ReportView({
                   <td className="px-3 py-2.5 text-right tabular-nums">
                     {f.meals(m.mealCount)}
                   </td>
-                  <td className="px-3 py-2.5 text-right tabular-nums">{f.amount(m.extraCost)}</td>
                   <td className="px-3 py-2.5 text-right tabular-nums font-medium">
                     {f.amount(m.totalCost)}
                   </td>
@@ -206,7 +216,6 @@ export function ReportView({
               <td className="px-3 py-3 text-right tabular-nums">
                 {f.meals(report.totalMeals)}
               </td>
-              <td className="px-3 py-3 text-right tabular-nums">{f.amount(report.totalExtraCost)}</td>
               <td className="px-3 py-3 text-right tabular-nums">{f.amount(report.totalMemberCost)}</td>
               <td className="px-3 py-3 text-right tabular-nums text-red-600">
                 {f.amount(totalOutstanding)}
@@ -216,11 +225,15 @@ export function ReportView({
               </td>
             </tr>
             <tr className="border-t">
-              <td colSpan={7} className="px-3 py-3 text-center text-lg">
-                {r.mealRateColon}{" "}
-                <span className="text-primary">
-                  {report.mealRate === null ? "—" : t.common.taka(f.amount(report.mealRate))}
-                </span>
+              <td colSpan={6} className="px-3 py-3 text-lg">
+                <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-1">
+                  <span>
+                    {r.mealRateColon} <span className="text-primary">{mealRate}</span>
+                  </span>
+                  <span>
+                    {s.extraPerMember}: <span className="text-primary">{extraPerMember}</span>
+                  </span>
+                </div>
               </td>
             </tr>
           </tfoot>

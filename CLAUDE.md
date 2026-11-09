@@ -34,6 +34,8 @@ and monthly record belongs to a hostel.
   - The report pages have no header, so `PublicReportPage` shows its own
     `LanguageToggle` + `ThemeToggle` (no-print) at the top.
   - No login needed.
+  - `ReportView` has **no per-member extra-cost column or card line** (it's the same for
+    everyone): জনপ্রতি অতিরিক্ত খরচ is shown once beside the meal rate; মোট খরচ still includes it.
   - The public report shows only the member table + meal rate; the "মাসিক খরচের সারসংক্ষেপ"
     summary grid is hidden there (`showSummary={false}`) but still shown in admin views.
   - In admin views (published record, editor preview) every summary item shows ▲/▼ and the
@@ -42,6 +44,12 @@ and monthly record belongs to a hostel.
     `ReportView previous`). Costs and বকেয়া going up are red, down is `primary`; deposits are
     the opposite; members, meals and ফেরত are neutral. The new-month editor reloads it with
     the period (`prepareNewMonthAction` returns `previous`).
+  - **Print:** reports with up to 15 members (`PORTRAIT_PRINT_MAX_MEMBERS` in `ReportView`) print
+    on one A4 portrait page (`.print-portrait` + an inline `@page` rule); larger ones stay
+    A4 landscape. The PDF download is always A4 portrait, and its pages break only between table rows. `@page` has **no top/bottom margin**
+    (`margin: 0 10mm`) so browsers don't print the page title/URL/date; `.report-sheet` adds the
+    space back as padding. In print and PDF the name column shrinks to the longest name, is semibold, and drops its
+    sticky position and solid background. The `dark` variant excludes print (`@media not print`).
   - The report pages live in the `(report)` route group, with **no navbar or footer**.
     `/monthly-bill` itself is in `(site)`.
 - **Navigation:**
@@ -70,9 +78,17 @@ and monthly record belongs to a hostel.
   - `/admin/password` redirects there. The sidebar's প্রোফাইল item, the profile card above লগআউট, and
     the header link all point to it.
   - The dashboard is kept minimal: a title with the current month and status, the
-    public-link card, the 8 summary cards (or one create button if no record exists), and
+    public-link card (its Share button opens a modal with the link's QR code, via `qrcode.react`, and the copy button; same card on the profile page), the 8 summary cards (or one create button if no record exists), and
     a link to the public report.
   - Don't re-add lists that duplicate sidebar pages.
+  - **Contacts:** `/admin/contacts` (sidebar যোগাযোগ, `ContactsManager`) lists active members
+    with an inline name + phone edit. Its form adds a separate `Contact` (`contact-service`,
+    name + required phone, deletable) that must **never** join the member list. Removing a member sets `Member.hiddenFromContacts`
+    (contact list and public page only; the member and records are untouched; a "removed" list adds them back). It also has the
+    contact-list `PublicLinkCard kind="contacts"` (Share → QR + link). The number is `Member.phone`
+    (`memberPhoneSchema`: Bangla digits/spaces/hyphens normalized, stored as ASCII, empty clears).
+    Public, read-only, `noindex`: `/contacts/<hostel-id>` shows only name + phone of active
+    members who have a number, plus the separate contacts (`getPublicContacts`). Editing goes only through the Admin member actions.
   - **Mobile:** `/admin/accounts` shows one card per month below `md` and the table from
     `md` up. On the members page, নিষ্ক্রিয় / সক্রিয় করুন becomes an icon-only button
     below `sm` (`Ban` / `CircleCheck`). `ReportView` (published record + public bill) shows a
@@ -168,7 +184,7 @@ src/features/auth/       login/register/logout/hostel-settings/password actions 
 src/i18n/                config (locales, `lang` cookie), dictionaries/bn.ts + en.ts, messages.ts (server-message translations), index.ts (getI18nFor, formatters), server.ts (getLocale/getI18n), client.tsx (I18nProvider/useI18n), actions.ts (setLocaleAction)
 src/services/            business logic + DB access (no auth inside; every function takes hostelId)
 src/lib/                 mongodb.ts, auth.ts, authz.ts, money.ts, months.ts, site.ts, action-result.ts
-src/models/              Admin (user), Hostel, Member, MonthlyAccount
+src/models/              Admin (user), Hostel, Member, Contact, MonthlyAccount
 src/schemas/             Zod schemas shared by client and server
 scripts/                 create-admin, check-db, migrate-multi-hostel
 tests/                   calculate, accounting-service (DB, incl. hostel isolation), authorization (+ sign-up), hostel-id, i18n
@@ -262,6 +278,9 @@ with a Bangla message) → Mongoose.
   use `setup*` and `makeHostel` names.
 - npm 12 blocks install scripts by default (warnings are expected).
 - Sign-up has no email verification or rate limiting yet.
+- `models.X || model(...)` keeps the old schema across hot reloads, and unknown fields are then
+  silently dropped on save. `Member` re-registers itself in dev (`deleteModel`); for other models,
+  restart `npm run dev` after changing the schema.
 
 ## Status
 

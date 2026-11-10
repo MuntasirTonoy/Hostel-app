@@ -100,7 +100,7 @@ and monthly record belongs to a hostel.
 ## Stack
 
 Next.js 16.4 (App Router, Turbopack, Server Actions; `proxy.ts` replaces middleware) ·
-React 19 · TypeScript · MongoDB Atlas + Mongoose 9 · Auth.js v5 beta (Credentials only) ·
+React 19 · TypeScript · MongoDB Atlas + Mongoose 9 · Auth.js v5 beta (Credentials + optional Google) ·
 Tailwind v4 · shadcn/ui (radix-nova style; `cn` comes from the `cn` package) ·
 lucide-react · React Hook Form + Zod 4 · next-themes · html2canvas-pro + jsPDF · Vitest.
 
@@ -146,10 +146,20 @@ npm run admin:create -- --email x@y.com --password "..." [--name "Name"] [--host
   - public self sign-up;
   - one hostel per user;
   - no roles, since every user is the admin of their own hostel;
-  - no OAuth: email + bcrypt password in the `admins` collection;
+  - email + bcrypt password in the `admins` collection, plus **optional Google OAuth**
+    (the user asked for it on 2026-11-10). Google is enabled only when `AUTH_GOOGLE_ID` and
+    `AUTH_GOOGLE_SECRET` are set (`isGoogleAuthEnabled` in `src/lib/auth.ts`), and then
+    the login and register cards show "Google দিয়ে চালিয়ে যান" (`GoogleSignInButton`).
+    Only verified Google emails are accepted. The `jwt` callback maps the account to our own
+    user via `findOrCreateOAuthUser`: an existing account with the same email is reused,
+    otherwise a user **without a password** (`passwordHash: ""`) and a hostel with the
+    default name (`t.auth.defaultHostelName`) are created. Password login always fails for
+    password-less accounts. Auth.js errors redirect to `/login?error=…` (`oauthFailed`).
+  - The login password field has a show/hide toggle (`PasswordInput`, `src/components/password-input.tsx`).
   - change the password at `/admin/password`, or reset it with `npm run admin:create`.
   - `ADMIN_EMAILS` and `HOSTEL_NAME` are no longer used and were removed from `.env`.
-    `.env` holds `MONGO_URI`, `MONGO_DB_NAME`, `AUTH_SECRET` and `APP_URL`.
+    `.env` holds `MONGO_URI`, `MONGO_DB_NAME`, `AUTH_SECRET` and `APP_URL`, plus optional
+    `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` for Google sign-in.
 - **Domain:** `APP_URL` (e.g. `https://hisab.in`, no trailing slash) builds shareable report
   links via `getAppUrl()` in `src/lib/site.ts`. It's currently `http://localhost:3000`; set
   the real domain when deploying.
@@ -187,7 +197,7 @@ src/lib/                 mongodb.ts, auth.ts, authz.ts, money.ts, months.ts, sit
 src/models/              Admin (user), Hostel, Member, Contact, MonthlyAccount
 src/schemas/             Zod schemas shared by client and server
 scripts/                 create-admin, check-db, migrate-multi-hostel
-tests/                   calculate, accounting-service (DB, incl. hostel isolation), authorization (+ sign-up), hostel-id, i18n
+tests/                   calculate, accounting-service (DB, incl. hostel isolation), authorization (+ sign-up), oauth, hostel-id, i18n
 ```
 
 ## Languages (i18n)

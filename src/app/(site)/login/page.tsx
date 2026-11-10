@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/features/auth/login-form";
 import { getI18n } from "@/i18n/server";
+import { isGoogleAuthEnabled } from "@/lib/auth";
 import { getAdminSession } from "@/lib/authz";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -9,11 +10,12 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.auth.loginTitle };
 }
 
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   if (await getAdminSession()) redirect("/admin");
+  const { error } = await searchParams;
   return (
     <main className="flex flex-1 items-center justify-center bg-muted/40 px-4 py-12">
-      <LoginForm />
+      <LoginForm googleEnabled={isGoogleAuthEnabled} oauthError={Boolean(error)} />
     </main>
   );
 }

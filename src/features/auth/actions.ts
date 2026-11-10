@@ -63,6 +63,11 @@ export async function registerAction(values: unknown): Promise<FormState> {
   return signInAndRedirect(email, password);
 }
 
+/** Starts Google sign-in (also creates the account and hostel on first use). */
+export async function googleSignInAction(): Promise<void> {
+  await signIn("google", { redirectTo: "/admin" });
+}
+
 export async function logoutAction(): Promise<void> {
   await signOut({ redirectTo: "/login" });
 }

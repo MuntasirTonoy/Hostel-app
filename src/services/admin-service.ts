@@ -28,9 +28,45 @@ export async function verifyAdminCredentials(
 ): Promise<{ id: string; email: string; name: string } | null> {
   await connectDB();
   const admin = await Admin.findOne({ email: email.trim().toLowerCase() }).lean<AdminLean>();
-  const ok = await bcrypt.compare(password, admin?.passwordHash ?? DUMMY_HASH);
-  if (!admin || !ok) return null;
+  // Google-only accounts have no password hash and can't use password login.
+  const ok = await bcrypt.compare(password, admin?.passwordHash || DUMMY_HASH);
+  if (!admin?.passwordHash || !ok) return null;
   return { id: String(admin._id), email: admin.email, name: admin.name };
+}
+
+/**
+ * OAuth (Google) sign-in: returns the account with this verified email, or
+ * creates a new user (without a password) and their hostel. The hostel gets a
+ * default name that the admin can change on the profile page.
+ */
+export async function findOrCreateOAuthUser(
+  rawEmail: string,
+  name = "",
+  hostelName = "আমার হোস্টেল",
+): Promise<{ id: string; email: string; name: string }> {
+  const email = rawEmail.trim().toLowerCase();
+  await connectDB();
+  let admin = await Admin.findOne({ email }).lean<AdminLean>();
+  if (!admin) {
+    try {
+      const created = await Admin.create({ email, name: name.trim().slice(0, 100) });
+      admin = { _id: created._id, email: created.email, name: created.name, passwordHash: "" };
+    } catch (error) {
+      // A parallel sign-in created it first.
+      if ((error as { code?: number }).code !== 11000) throw error;
+      admin = await Admin.findOne({ email }).lean<AdminLean>();
+      if (!admin) throw error;
+    }
+  }
+  const id = String(admin._id);
+  if (!(await Hostel.exists({ ownerId: admin._id }))) {
+    try {
+      await createHostel(id, hostelName);
+    } catch (error) {
+      if ((error as { code?: number }).code !== 11000) throw error;
+    }
+  }
+  return { id, email: admin.email, name: admin.name || admin.email };
 }
 
 /** Loads a signed-in user together with their hostel (null if either no longer exists). */
@@ -142,7 +178,7 @@ export async function updateProfile(userId: string, input: unknown): Promise<Pro
       throw new ServiceError("VALIDATION", EMAIL_IN_USE_MESSAGE);
     }
     // 2. Only then verify the current password.
-    const ok = data.currentPassword
+    const ok = data.currentPassword && admin.passwordHash
       ? await bcrypt.compare(data.currentPassword, admin.passwordHash)
       : false;
     if (!ok) {

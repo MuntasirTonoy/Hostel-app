@@ -14,6 +14,7 @@ import { FieldError } from "@/components/field-error";
 import { useI18n } from "@/i18n/client";
 import { registerSchema, type RegisterInput } from "@/schemas/auth";
 import { registerAction } from "./actions";
+import { GoogleSignInButton } from "./google-sign-in-button";
 
 const FIELDS = [
   { name: "name", type: "text", autoComplete: "name" },
@@ -23,7 +24,7 @@ const FIELDS = [
   { name: "confirmPassword", type: "password", autoComplete: "new-password" },
 ] as const;
 
-export function RegisterForm() {
+export function RegisterForm({ googleEnabled = false }: { googleEnabled?: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const { t } = useI18n();
@@ -50,7 +51,8 @@ export function RegisterForm() {
         <CardTitle className="text-xl">{a.registerTitle}</CardTitle>
         <CardDescription>{a.registerDescription}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        {googleEnabled ? <GoogleSignInButton /> : null}
         <form onSubmit={submit} className="space-y-4">
           {error ? (
             <Alert variant="destructive">

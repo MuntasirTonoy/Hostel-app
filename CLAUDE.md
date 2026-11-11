@@ -56,7 +56,8 @@ and monthly record belongs to a hostel.
   - `SiteHeader` appears on `(site)` pages **and** in the admin layout, with
     `AdminMobileMenu` in its `menu` slot. The desktop sidebar sits below it.
   - Logged-in users see ড্যাশবোর্ড instead of লগইন/রেজিস্টার, and the landing page's
-    main button becomes "ড্যাশবোর্ডে যান". লগআউট is at the bottom of the sidebar, directly below a profile card (avatar initial, user name, mess name) that links to `/admin/profile`.
+    main button becomes "ড্যাশবোর্ডে যান". The header has **no profile link**; logged-in users get a
+    লগআউট button in it on desktop only (`lg` up; on mobile logout is in `AdminMobileMenu`). লগআউট is also at the bottom of the sidebar, directly below a profile card (avatar initial, user name, mess name) that links to `/admin/profile`.
 - **Admin:** `/login`, `/register`, and `/admin/*` (dashboard, new month, monthly records,
   members, profile). **There is no settings page**: everything account- and hostel-related
   is on `/admin/profile`, and `/admin/settings` redirects there. Don't re-add a settings page.
@@ -75,8 +76,8 @@ and monthly record belongs to a hostel.
     via `checkEmailAvailableAction` → `isEmailAvailable`) and only then shows the
     current-password field. `updateProfile` checks for an email in use before verifying
     the password, and maps a duplicate-key race to the same message.
-  - `/admin/password` redirects there. The sidebar's প্রোফাইল item, the profile card above লগআউট, and
-    the header link all point to it.
+  - `/admin/password` redirects there. The sidebar's প্রোফাইল item and the profile card above লগআউট
+    point to it.
   - The dashboard is kept minimal: a title with the current month and status, the
     public-link card (its Share button opens a modal with the link's QR code, via `qrcode.react`, and the copy button; same card on the profile page), the 8 summary cards (or one create button if no record exists), and
     a link to the public report.

@@ -1,9 +1,10 @@
 "use client";
 
-import { Calculator, FileText, Home, LayoutDashboard, LogIn, UserPlus, UserRound } from "lucide-react";
+import { Calculator, FileText, Home, LayoutDashboard, LogIn, LogOut, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { logoutAction } from "@/features/auth/actions";
 import { useI18n } from "@/i18n/client";
 import { APP_NAME } from "@/lib/site";
 import { cn } from "@/lib/utils";
@@ -20,12 +21,12 @@ const GUEST_LINKS = [
 ] as const;
 const USER_LINKS = [
   { href: "/admin", key: "dashboard", icon: LayoutDashboard },
-  { href: "/admin/profile", key: "profile", icon: UserRound },
 ] as const;
 
 /**
  * Global navigation bar, shown on public pages and in the admin area.
- * Signed-in users see a dashboard link instead of login/register.
+ * Signed-in users see a dashboard link instead of login/register, plus a
+ * desktop-only logout button (on mobile, logout is in the admin menu).
  * `menu` is an optional element (the admin sidebar's mobile menu button).
  */
 export function SiteHeader({ loggedIn, menu }: { loggedIn: boolean; menu?: ReactNode }) {
@@ -69,6 +70,17 @@ export function SiteHeader({ loggedIn, menu }: { loggedIn: boolean; menu?: React
             );
           })}
         </nav>
+        {loggedIn ? (
+          <form action={logoutAction} className="hidden lg:block">
+            <button
+              type="submit"
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-muted hover:text-red-700"
+            >
+              <LogOut className="size-4" />
+              {t.nav.logout}
+            </button>
+          </form>
+        ) : null}
         <LanguageToggle />
         <ThemeToggle />
       </div>
